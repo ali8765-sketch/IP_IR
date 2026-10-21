@@ -23,15 +23,18 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
-    <!-- https://developer.android.com/about/versions/11/privacy/package-visibility -->
-    <uses-permission
-        android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
+    <!-- Chapar: no QUERY_ALL_PACKAGES. The "Apps that skip the VPN" list shows launchable apps only, which this <queries> entry makes visible (Android 11 package visibility). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <!-- Chapar: no CAMERA (QR scanning is unreachable), ACCESS_LOCAL_NETWORK (Chapar talks to no local-network device), or RECEIVE_BOOT_COMPLETED (nothing starts at boot). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
         tools:ignore="ForegroundServicesPolicy" />
     <uses-permission
@@ -39,18 +42,19 @@
         android:minSdkVersion="34" />
     <!-- <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".AngApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:banner="@mipmap/ic_banner"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/AppThemeDayNight.NoActionBar"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
 
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
@@ -61,8 +65,9 @@
                 android:value="true" />
         </service>
 
+        <!-- Chapar: the launcher is the one-button screen. Upstream's MainActivity stays in the build but nothing opens it (D-042). -->
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".ui.chapar.ChaparActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -79,6 +84,10 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:exported="false"
+            android:launchMode="singleTask" />
         <activity
             android:name=".ui.server.ServerVmessActivity"
             android:exported="false"
@@ -182,25 +191,10 @@
             android:process=":daemon"
             android:theme="@style/AppThemeDayNight.NoActionBar.Translucent" />
 
+        <!-- Chapar (D-042): no importing links from other apps or v2rayng:// URLs; profiles come only from our backend. -->
         <activity
             android:name=".ui.UrlSchemeActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.BROWSABLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:scheme="v2rayng" />
-                <data android:host="install-config" />
-                <data android:host="install-sub" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".ui.checkupdate.CheckUpdateActivity"
             android:exported="false" />
@@ -276,9 +270,11 @@
                 android:value="test" />
         </service>
 
+        <!-- Chapar (D-042): not exported. The launcher reaches a widget provider as the system and the
+             widget's own clicks use explicit PendingIntents, so no other app can send it a click. -->
         <receiver
             android:name=".receiver.WidgetProvider"
-            android:exported="true"
+            android:exported="false"
             android:process=":daemon">
             <meta-data
                 android:name="android.appwidget.provider"
@@ -289,16 +285,8 @@
                 <action android:name="${applicationId}.action.activity" />
             </intent-filter>
         </receiver>
-        <receiver
-            android:name=".receiver.BootReceiver"
-            android:exported="true"
-            android:label="BootReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
+        <!-- Chapar (D-042): BootReceiver is removed from the manifest. It started the stored key without
+             a Connect, and the key is fresh only after the user taps Connect. -->
 
         <service
             android:name=".service.QSTileService"
@@ -316,24 +304,16 @@
                 android:value="tile" />
         </service>
         <!-- =====================Tasker===================== -->
+        <!-- Chapar (D-042): the Tasker plugin lists and starts servers by ID, so it is closed to other apps. -->
         <activity
             android:name=".ui.shortcut.TaskerActivity"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher">
-            <intent-filter>
-                <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
-            </intent-filter>
-        </activity>
+            android:exported="false"
+            android:icon="@mipmap/ic_launcher" />
 
         <receiver
             android:name=".receiver.TaskerReceiver"
-            android:exported="true"
-            android:process=":daemon"
-            tools:ignore="ExportedReceiver">
-            <intent-filter>
-                <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING" />
-            </intent-filter>
-        </receiver>
+            android:exported="false"
+            android:process=":daemon" />
         <!-- =====================Tasker===================== -->
         <provider
             android:name="androidx.startup.InitializationProvider"

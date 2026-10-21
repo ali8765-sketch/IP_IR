@@ -87,6 +87,9 @@ class CoreVpnService : VpnService(), ServiceControl {
             return START_NOT_STICKY
         }
         LogUtil.i(AppConfig.TAG, "StartCore-VPN: Service command received, systemVpnStart=$isSystemVpnStart")
+        // Chapar: a new local SOCKS port and credentials for this start, before the tunnel and the core
+        // read them (hev-socks5-tunnel in setupVpnService, the core's inbound in startService).
+        SettingsManager.refreshRuntimeSocksPort()
         if (!setupVpnService()) {
             unlockStart()
             // Stop service if setup fails to avoid infinite restart loops (START_STICKY)

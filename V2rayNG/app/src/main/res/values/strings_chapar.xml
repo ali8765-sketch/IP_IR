@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chapar screen. English only (Chapar decision D-021). Plain words: never "VLESS", "config", or "server". -->
+<resources>
+    <string name="chapar_settings">Settings</string>
+
+    <string name="chapar_status_disconnected">Not connected</string>
+    <string name="chapar_status_connecting">Connecting…</string>
+    <string name="chapar_status_connected">Connected</string>
+    <string name="chapar_status_disconnecting">Disconnecting…</string>
+    <string name="chapar_status_failed">Could not connect</string>
+    <string name="chapar_failed_hint">Check your internet connection and try again.</string>
+
+    <string name="chapar_hint_connect">Tap to connect</string>
+    <string name="chapar_hint_disconnect">Tap to disconnect</string>
+    <string name="chapar_hint_wait">Please wait</string>
+    <string name="chapar_hint_cancel">Tap to cancel</string>
+    <string name="chapar_action_cancel">Cancel connecting</string>
+    <string name="chapar_action_connect">Connect</string>
+    <string name="chapar_action_disconnect">Disconnect</string>
+
+    <string name="chapar_mode_label">Mode</string>
+    <string name="chapar_mode_iran">Iran</string>
+    <string name="chapar_mode_tor">Tor</string>
+    <!-- Iran mode since D-046: Iranian sites leave from our server in Iran. -->
+    <string name="chapar_mode_iran_note">Fast and private. Iranian sites see an Iranian address: they are reached through our server in Iran.</string>
+    <string name="chapar_mode_tor_note">Slower, but websites can\'t see your IP. Some sites block Tor. Other apps on your phone can still find devices on your home network.</string>
+    <string name="chapar_mode_unavailable">Not available right now</string>
+
+    <string name="chapar_welcome_title">Welcome to Chapar</string>
+    <string name="chapar_welcome_body">Sign in with your Gmail account to connect.</string>
+    <string name="chapar_sign_in">Sign in with Google</string>
+    <string name="chapar_privacy_note">We keep only a scrambled code made from your Google ID, your nickname, and how much data you use. Never your email, your IP address, or the sites you visit. Google sees that you signed in, and Chapar needs Google Play services. In Iran mode, Iranian sites (and their names) are reached through our server in Iran. In Tor mode we still see that you use Tor and how much data you use. You can delete your account in Settings.</string>
+
+    <string name="chapar_error_network">Can\'t reach Chapar. Check your internet and try again.</string>
+    <string name="chapar_error_gmail_only">Only Gmail accounts can use Chapar. Choose an @gmail.com account.</string>
+    <string name="chapar_error_signup_closed">Sign-up is closed: all places are taken.</string>
+    <string name="chapar_error_nickname_taken">This nickname is taken. Try another one.</string>
+    <string name="chapar_error_invalid_nickname">Use 3 to 20 letters, digits, or _.</string>
+    <string name="chapar_connect_failed">Chapar couldn\'t get your connection ready. Try again in a moment.</string>
+    <string name="chapar_error_failed">Sign-in didn\'t work. Please try again.</string>
+    <string name="chapar_error_rate_limited">Too many tries in a short time. Wait a minute and try again.</string>
+    <string name="chapar_error_server_busy">Chapar is busy right now. Try again in a moment.</string>
+    <string name="chapar_error_insecure">The connection to Chapar could not be checked as safe. Try another network.</string>
+
+    <string name="chapar_nickname_title">Choose a nickname</string>
+    <string name="chapar_nickname_body">We use it to greet you. Don\'t use your real name or a name people know you by online.</string>
+    <string name="chapar_nickname_label">Nickname</string>
+    <string name="chapar_nickname_hint">3 to 20 characters: letters, digits, and _.</string>
+    <string name="chapar_continue">Continue</string>
+    <string name="chapar_cancel">Cancel</string>
+
+    <string name="chapar_usage_line">%1$s GB left · resets %2$s</string>
+    <string name="chapar_usage_over">Your data is used up. It comes back on %1$s.</string>
+    <string name="chapar_account_disabled">Your account is turned off. Your connection doesn\'t work right now.</string>
+
+    <string name="chapar_signed_in_as">Signed in as %1$s</string>
+    <string name="chapar_sign_out">Sign out</string>
+    <string name="chapar_delete_account">Delete account</string>
+    <string name="chapar_delete_title">Delete your account?</string>
+    <string name="chapar_delete_body">This can\'t be undone. Your connection stops within a few minutes, and your nickname is deleted. Until the end of the month we keep only a scrambled code of your Google ID and this month\'s usage, so signing up again does not reset your data.</string>
+    <string name="chapar_delete_confirm">Delete</string>
+    <string name="chapar_account_deleted">Your account is deleted</string>
+    <string name="chapar_delete_failed">Could not delete your account. Try again.</string>
+
+    <string name="chapar_report_problem">Report a problem</string>
+    <string name="chapar_report_problem_note">See what happened and copy it to send when you ask for help.</string>
+    <string name="chapar_report_title">Connection report</string>
+    <string name="chapar_report_body">This report has no keys, server addresses, or sites you visited. Copy it and send it to us if you need help.</string>
+    <string name="chapar_report_copy">Copy</string>
+    <string name="chapar_report_close">Close</string>
+    <string name="chapar_report_copied">Report copied</string>
+
+    <string name="chapar_bypass_title">Apps that skip the VPN</string>
+    <string name="chapar_bypass_note">Choose apps that use your own internet connection.</string>
+    <string name="chapar_bypass_warning">Apps you choose here use your real internet connection and your real address. They are not protected by Chapar.</string>
+    <string name="chapar_bypass_search">Search apps</string>
+    <string name="chapar_bypass_on">Skips the VPN</string>
+    <string name="chapar_bypass_off">Uses the VPN</string>
+    <string name="chapar_bypass_save">Save</string>
+    <string name="chapar_bypass_reconnect">Saved. Disconnect and connect again to apply it.</string>
+    <string name="chapar_always_on_title">Block leaks</string>
+    <string name="chapar_always_on_note">In Android\'s VPN settings, tap the gear next to Chapar and turn on \"Always-on VPN\" and \"Block connections without VPN\". Then your real address is never used if the VPN drops.</string>
+
+    <string name="chapar_settings_about">About</string>
+    <string name="chapar_about_version">Chapar %1$s</string>
+    <string name="chapar_about_license">Free software under the GPL-3.0 license, built on v2rayNG, without any warranty. You can ask us for the source code of this version.</string>
+</resources>

@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.LocaleList
 import android.provider.Settings
 import android.util.Base64
@@ -443,22 +442,23 @@ object Utils {
     }
 
     /**
-     * Get the receiver flags based on the Android version.
+     * Get the flags for the app's own service and UI broadcast receivers.
+     *
+     * Chapar: always not exported. The service, UI, and tile receivers take stop, restart, and state
+     * messages; with RECEIVER_EXPORTED any other app could stop the VPN or fake its state. Processes
+     * of this app (the UI and `:daemon`) share one UID, so they can still reach each other.
      *
      * @return The receiver flags.
      */
-    fun receiverFlags(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.RECEIVER_EXPORTED
-    } else {
-        ContextCompat.RECEIVER_NOT_EXPORTED
-    }
+    fun receiverFlags(): Int = ContextCompat.RECEIVER_NOT_EXPORTED
 
     /**
      * Check if the package is Xray.
      *
      * @return True if the package is Xray, false otherwise.
      */
-    fun isXray(): Boolean = BuildConfig.APPLICATION_ID.startsWith("com.v2ray.ang")
+    // Chapar: the fork has its own package name, so the core type comes from a build flag.
+    fun isXray(): Boolean = BuildConfig.IS_XRAY
 
     /**
      * Check if an IPv4 address is within an IPv4 CIDR range

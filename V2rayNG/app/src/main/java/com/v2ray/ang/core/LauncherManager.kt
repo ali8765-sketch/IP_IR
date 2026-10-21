@@ -56,6 +56,14 @@ object LauncherManager {
         MessageHelper.sendMsg2Service(context, AppConfig.MSG_STATE_STOP, "")
     }
 
+    /**
+     * Chapar: switches a running service to the selected profile without closing the VPN interface, so apps
+     * never fall back to the real network during a mode change. Does nothing when the service is stopped.
+     */
+    fun reloadService(context: Context) {
+        MessageHelper.sendMsg2Service(context, AppConfig.MSG_STATE_RELOAD, "")
+    }
+
     /** Restarts the active daemon without starting a stopped service. */
     fun restartService(context: Context) {
         MessageHelper.sendMsg2Service(context, AppConfig.MSG_STATE_RESTART, "")

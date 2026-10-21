@@ -1,0 +1,5 @@
+# Chapar build settings. Copy to chapar.local.properties (git-ignored) and fill in.
+# The app API, served by the backend behind Caddy (HTTPS only).
+CHAPAR_API_URL=https://api.example.com
+# The Google OAuth *Web* client ID; the backend checks tokens against it (D-041).
+CHAPAR_WEB_CLIENT_ID=000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com

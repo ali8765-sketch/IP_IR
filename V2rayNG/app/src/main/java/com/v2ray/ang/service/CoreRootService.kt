@@ -9,6 +9,7 @@ import com.v2ray.ang.contracts.ServiceControl
 import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.NotificationManager
+import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.root.RootProxyManager
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,10 @@ class CoreRootService : Service(), ServiceControl {
             LogUtil.i(AppConfig.TAG, "StartCore-Root: Core is already running")
             return START_STICKY
         }
+
+        // Chapar: a new local SOCKS port and credentials for this start (see CoreVpnService); the root
+        // mode tunnel reads them from the same place.
+        SettingsManager.refreshRuntimeSocksPort()
 
         // Start the in-process core first (this also posts the foreground notification),
         // then install the root routing off the main thread.

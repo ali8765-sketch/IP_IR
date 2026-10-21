@@ -9,6 +9,7 @@ import com.v2ray.ang.contracts.ServiceControl
 import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.NotificationManager
+import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.util.LogUtil
 import java.lang.ref.SoftReference
 
@@ -38,6 +39,8 @@ class CoreProxyOnlyService : Service(), ServiceControl {
             return START_STICKY
         }
 
+        // Chapar: a new local SOCKS port and credentials for this start (see CoreVpnService).
+        SettingsManager.refreshRuntimeSocksPort()
         if (!CoreServiceManager.startCoreLoop(null)) {
             LogUtil.e(AppConfig.TAG, "StartCore-Proxy: Failed to start core loop")
             stopSelf()

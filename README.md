@@ -1,90 +1,101 @@
-# v2rayNG
+# Chapar for Android
 
-A V2Ray client for Android, support [Xray core](https://github.com/XTLS/Xray-core) and [v2fly core](https://github.com/v2fly/v2ray-core)
+Chapar is a free VPN for Iranians who live outside Iran. This repository is the complete source code of the
+Android app, published so that anyone can check what the app does, build it themselves, and compare it with
+the APK we publish.
 
-[![API](https://img.shields.io/badge/API-24%2B-yellow.svg?style=flat)](https://developer.android.com/about/versions/lollipop)
-[![Kotlin Version](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg)](https://kotlinlang.org)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/2dust/v2rayNG)](https://github.com/2dust/v2rayNG/commits/master)
-[![CodeFactor](https://www.codefactor.io/repository/github/2dust/v2rayng/badge)](https://www.codefactor.io/repository/github/2dust/v2rayng)
-[![GitHub Releases](https://img.shields.io/github/downloads/2dust/v2rayNG/latest/total?logo=github)](https://github.com/2dust/v2rayNG/releases)
-[![Chat on Telegram](https://img.shields.io/badge/Chat%20on-Telegram-brightgreen.svg)](https://t.me/v2rayn)
+The app is a fork of [v2rayNG](https://github.com/2dust/v2rayNG) 2.3.11 by 2dust and its contributors, and is
+licensed under the **GPL-3.0**, like v2rayNG (see [LICENSE](LICENSE)). The servers are run by us and their code
+is not part of this repository.
 
----
+## What the app does
 
-## Download / 下载
+- You sign in with a Google account (a verified `@gmail.com` address) and choose a nickname.
+- Each account gets a monthly allowance at a fixed speed. The app shows how much you have used.
+- Two modes:
+  - **Iran mode** (default): your traffic goes through our server. Iranian websites are reached through a
+    server in Iran, so they see an Iranian address (banking and government sites work).
+  - **Tor mode**: your traffic leaves through the Tor network, so websites do not see our server's address.
+- You can pick apps that should skip the VPN.
 
-Download the latest release here:
+## What the app sends, and to whom
 
-在这里下载最新版本：
+The app talks to exactly three places. You can check each one in the code under
+`V2rayNG/app/src/main/java/com/v2ray/ang/ui/chapar/`:
 
-[https://github.com/2dust/v2rayNG/releases](https://github.com/2dust/v2rayNG/releases)
+| To | What | Where in the code |
+|---|---|---|
+| Google | Google sign-in on your phone (Android Credential Manager). | `ChaparActivity.kt` |
+| Our API (HTTPS only) | `POST /api/v1/auth/google`: the sign-in token from Google and your nickname. The server checks the token, uses the email address once to check it is a verified Gmail address, and stores only a hash of your Google account ID and your nickname. `GET /api/v1/me`: your account status and usage. `POST /api/v1/connect`: a fresh connection key every time you connect. `POST /api/v1/logout` and `DELETE /api/v1/me`: sign out and delete your account. | `ChaparApi.kt`, `ChaparRepository.kt` |
+| Our VPN server | Your traffic, encrypted (VLESS + REALITY, TLS 1.3). | the Xray core |
 
-> [!TIP]
-> v2rayNG is the mobile version. For the desktop version, please visit the v2rayN \
-> v2rayNG 是手机版，电脑版请访问 v2rayN
->
-> https://github.com/2dust/v2rayN
+The app accepts connection settings only from our own API, and only for our own server (`ChaparLinks.kt`). It
+does not accept links, QR codes, or subscriptions from anywhere else.
 
----
+It does **not** contain analytics, ads, trackers, or crash reporting, and it turns the core's connection log
+off (`CoreConfigManager.kt`). The "Report a problem" screen only shows fixed texts on your phone
+(`ChaparDiagnostics.kt`); nothing is uploaded.
 
-### Geoip and Geosite
+### Permissions
 
-- geoip.dat and geosite.dat files are in `Android/data/com.v2ray.ang/files/assets` (path may differ on some Android device)
-- download feature will get enhanced version in this [repo](https://github.com/Loyalsoldier/v2ray-rules-dat) (note: it needs a working proxy)
-- latest official [domain list](https://github.com/Loyalsoldier/v2ray-rules-dat) and [ip list](https://github.com/Loyalsoldier/geoip) can be imported manually
-- possible to use a third-party dat file in the same folder, like [h2y](https://guide.v2fly.org/routing/sitedata.html#%E5%A4%96%E7%BD%AE%E7%9A%84%E5%9F%9F%E5%90%8D%E6%96%87%E4%BB%B6)
+| Permission | Why |
+|---|---|
+| `INTERNET`, `ACCESS_NETWORK_STATE`, `CHANGE_NETWORK_STATE` | To connect, and to notice network changes. |
+| `BIND_VPN_SERVICE` | To be a VPN (Android asks you once). |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`, `POST_NOTIFICATIONS` | To keep the VPN running and show its notification. |
+| `BIND_QUICK_SETTINGS_TILE` | The quick-settings tile to connect and disconnect. |
 
-More in our [wiki](https://github.com/2dust/v2rayNG/wiki)
+The app does not ask for contacts, location, camera, microphone, storage, or phone permissions.
 
-### Geoip 与 Geosite
+### What you cannot check here
 
-- geoip.dat 和 geosite.dat 文件位于 `Android/data/com.v2ray.ang/files/assets`（部分设备路径可能不同）
-- 下载功能将获取该 [仓库](https://github.com/Loyalsoldier/v2ray-rules-dat) 中的增强版本（注意：此功能需要一个可用的代理）
-- 最新官方 [域名列表](https://github.com/Loyalsoldier/v2ray-rules-dat) 和 [IP 列表](https://github.com/Loyalsoldier/geoip) 可手动导入
-- 也可在同一文件夹中使用第三方 dat 文件，例如 [h2y](https://guide.v2fly.org/routing/sitedata.html#%E5%A4%96%E7%BD%AE%E7%9A%84%E5%9F%9F%E5%90%8D%E6%96%87%E4%BB%B6)
+What our servers do is described in the privacy policy that the app links to (no activity, DNS, or connection
+logs; no IP addresses; no email addresses or real names stored). The server code is not public, so for that
+part you rely on that policy.
 
-更多内容请见我们的 [wiki](https://github.com/2dust/v2rayNG/wiki)
+## What we changed in v2rayNG
 
----
+The first commit of this repository's own work sits directly on top of v2rayNG's `2.3.11` release
+(tag `v2rayNG-2.3.11` here), so `git diff v2rayNG-2.3.11 main` shows every change. In short:
 
-## Development guide / 开发指南
+- New: the Chapar screens and logic in `ui/chapar/` (sign-in, connect, modes, settings, apps that skip the VPN),
+  their tests in `src/test/.../ui/chapar/`, `handler/ChaparRouting.kt`, `handler/SocksSession.kt`,
+  `strings_chapar.xml`, the icon, and the build settings in `chapar.local.properties.example`.
+- Turned off for safety: importing links, QR codes, and URL schemes from other apps (those screens are no longer
+  exported, and the camera permission is gone); starting at boot; exported broadcast receivers; cloud backup of
+  app data (`backup_rules.xml`, `data_extraction_rules.xml`); cleartext traffic (`network_security_config.xml`).
+- Changed: the local SOCKS port is random and password-protected; the core's access log is off; the generated
+  core config file is deleted when the VPN stops; switching modes reloads the core without dropping the tunnel;
+  the routing sends everything through the VPN except apps you choose.
+- Removed upstream files that do not apply to Chapar: the v2rayNG privacy policy, store metadata, CI workflows,
+  and contributor guides.
 
-### Note
+## Build it yourself
 
-- Android project under the V2rayNG folder can be compiled directly in Android Studio, or using the Gradle wrapper. But the v2ray core inside the aar is (probably) outdated.
-- The aar can be compiled from the Golang project [AndroidLibV2rayLite](https://github.com/2dust/AndroidLibV2rayLite) or [AndroidLibXrayLite](https://github.com/2dust/AndroidLibXrayLite). For a quick start, read the guides for [Go Mobile](https://github.com/golang/go/wiki/Mobile) and [Makefiles for Go Developers](https://tutorialedge.net/golang/makefiles-for-go-developers/).
-- v2rayNG can run on Android Emulators. For WSA, VPN permission needs to be granted via `appops set [package name] ACTIVATE_VPN allow`.
+1. Clone with the native dependencies:
+   `git clone --recursive <this repository>`
+2. Build the two native parts, as v2rayNG does: `libv2ray.aar` from `AndroidLibXrayLite` (Go and gomobile; see
+   that project's README) into `V2rayNG/app/libs/`, and the tunnel with `./compile-hevtun.sh` (Android NDK).
+3. Copy `V2rayNG/chapar.local.properties.example` to `V2rayNG/chapar.local.properties` and fill in the API
+   address and the Google client ID (the values are in our published APK; anyone can read them there).
+4. With JDK 17: `cd V2rayNG && ./gradlew :app:testPlaystoreReleaseUnitTest :app:assemblePlaystoreRelease`.
+   This gives an unsigned APK.
 
-### 提示
+## Check our APK
 
-- V2rayNG 文件夹下的 Android 项目可直接在 Android Studio 中编译，或使用 Gradle wrapper 编译。但 aar 内置的 v2ray core（可能）已过时。
-- aar 可由 Golang 项目 [AndroidLibV2rayLite](https://github.com/2dust/AndroidLibV2rayLite) 或 [AndroidLibXrayLite](https://github.com/2dust/AndroidLibXrayLite) 编译而成。快速入门可参考 [Go Mobile](https://github.com/golang/go/wiki/Mobile) 指南和 [Makefiles for Go Developers](https://tutorialedge.net/golang/makefiles-for-go-developers/)。
-- v2rayNG 可在 Android 模拟器上运行。对于 WSA，需要通过 `appops set [package name] ACTIVATE_VPN allow` 授予 VPN 权限。
+Each release lists the commit it was built from, the SHA-256 of the APK, and the SHA-256 of our signing
+certificate (it stays the same for every release; `apksigner verify --print-certs <apk>` shows it). Your own
+build of the same commit is unsigned, so compare contents rather than whole files: for example
+[apksigcopier](https://github.com/obfusk/apksigcopier) `compare`, or `diffoscope` on the two APKs. Small
+differences can come from different build tools.
 
----
+## Reporting a security problem
 
+Please open an issue without details and ask for a private contact, or use GitHub's private vulnerability
+reporting for this repository.
 
-## GPG Verification / GPG 签名校验
+## Credits
 
-Release files are signed with GPG to verify authenticity and integrity, helping prevent mirror, ISP, or CDN hijacking.
-
-发布文件已使用 GPG 签名，可用于校验文件真实性与完整性，预防镜像站、运营商或 CDN 劫持。
-
-### Fingerprint / 公钥指纹
-
-```text
-7694 5E9F 3E9A 168F 8070 F195 805D 661C
-134D FAF6 8903 C199 463C 31E5 AE90 3AE0
-```
-
----
-
-## Community / 社区
-
-Telegram Group / Telegram 群组：
-
-[https://t.me/v2rayN](https://t.me/v2rayN)
-
-Telegram Channel / Telegram 频道：
-
-[https://t.me/github_2dust](https://t.me/github_2dust)
+v2rayNG by 2dust and contributors (GPL-3.0); [Xray-core](https://github.com/XTLS/Xray-core) (MPL-2.0) through
+[AndroidLibXrayLite](https://github.com/2dust/AndroidLibXrayLite) (LGPL-3.0);
+[hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel) (MIT).

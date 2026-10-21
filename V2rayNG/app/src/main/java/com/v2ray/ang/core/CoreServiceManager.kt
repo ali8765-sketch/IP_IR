@@ -132,7 +132,7 @@ object CoreServiceManager {
 
         LogUtil.i(AppConfig.TAG, "StartCore-Manager: Starting core loop for ${config.remarks}")
         val result = CoreConfigManager.getV2rayConfig(service, guid)
-        LogUtil.d(AppConfig.TAG, result.content)
+        // Chapar: never log result.content; it holds the connection key.
         if (!result.status) {
             error(result.errorMessage.ifBlank { "Failed to get V2Ray config" })
         }
@@ -425,8 +425,8 @@ object CoreServiceManager {
                 else -> return -1L
             }
 
+            // Chapar: connection addresses are never logged (no destination logs, SECURITY.md).
             if (destIP.isBlank() || destPort == 0L) {
-                LogUtil.d(AppConfig.TAG, "ProcessFinder: Find $network connection from $srcIP:$srcPort to :$destPort, (no dest)")
                 return -1L
             }
 
@@ -436,8 +436,6 @@ object CoreServiceManager {
                     InetSocketAddress(srcIP, srcPort.toInt()),
                     InetSocketAddress(destIP, destPort.toInt())
                 ).toLong()
-                LogUtil.d(AppConfig.TAG, "ProcessFinder: Find $network connection from $srcIP:$srcPort to $destIP:$destPort, uid=$uid")
-                //LogUtil.d(AppConfig.TAG, "ProcessFinder: Find $network connection from $srcIP:$srcPort to $destIP:$destPort, uid=$uid,${PackageUidResolver.uidToPackageName(uid.toString())}")
 
                 uid
             } catch (_: Exception) {
@@ -493,6 +491,22 @@ object CoreServiceManager {
                             serviceControl.stopService()
                             delay(500L)
                             LauncherManager.startService(serviceControl.getService())
+                        } finally {
+                            pendingResult.finish()
+                        }
+                    }
+                }
+
+                AppConfig.MSG_STATE_RELOAD -> {
+                    LogUtil.i(AppConfig.TAG, "StartCore-Manager: Reload with the selected profile")
+                    val pendingResult = goAsync()
+                    CoroutineScope(Dispatchers.Default).launch {
+                        try {
+                            // On failure reloadCore reports START_FAILURE and the VPN interface stays up without
+                            // a core: traffic is blocked rather than sent over the real network (fail closed).
+                            if (reloadCore()) {
+                                MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_START_SUCCESS, "")
+                            }
                         } finally {
                             pendingResult.finish()
                         }

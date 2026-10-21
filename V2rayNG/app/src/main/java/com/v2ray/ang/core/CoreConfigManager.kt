@@ -176,7 +176,11 @@ object CoreConfigManager {
         val primaryResolvedOutbound = configContext.resolvedOutbounds.first()
 
         val v2rayConfig = initV2rayConfig(configContext)
-        v2rayConfig.log.loglevel = MmkvManager.decodeSettingsString(AppConfig.PREF_LOGLEVEL) ?: "warning"
+        // Chapar: the log level alone does not stop Xray's access log (one line per connection with its
+        // destination, which reaches logcat); "none" turns it off, and DNS queries are not logged either.
+        v2rayConfig.log.loglevel = LogUtil.FIXED_LEVEL
+        v2rayConfig.log.access = "none"
+        v2rayConfig.log.dnsLog = false
         v2rayConfig.remarks = primaryResolvedOutbound.profile.remarks
 
         configureInbounds(v2rayConfig)
@@ -454,7 +458,9 @@ object CoreConfigManager {
      * Trim runtime sections that are not needed for latency testing.
      */
     private fun postProcessForSpeedtest(v2rayConfig: V2rayConfig) {
-        v2rayConfig.log.loglevel = MmkvManager.decodeSettingsString(AppConfig.PREF_LOGLEVEL) ?: "warning"
+        v2rayConfig.log.loglevel = LogUtil.FIXED_LEVEL
+        v2rayConfig.log.access = "none"
+        v2rayConfig.log.dnsLog = false
         v2rayConfig.inbounds.clear()
         v2rayConfig.routing.rules.clear()
         v2rayConfig.dns = null
@@ -528,23 +534,19 @@ object CoreConfigManager {
             inbound1.settings = V2rayConfig.InboundBean.InSettingsBean()
         }
 
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_PROXY_SHARING) != true) {
-            inbound1.listen = AppConfig.LOOPBACK
-        }
+        // Chapar: the local inbound is for the tunnel only. It listens on loopback (never on the LAN,
+        // whatever the proxy-sharing preference says), on this start's random port, and asks for this
+        // start's random user name and password, which hev-socks5-tunnel gets from the same place.
+        inbound1.listen = AppConfig.LOOPBACK
         inbound1.port = socksPort
         inbound1.settings?.udp = MmkvManager.decodeSettingsBool(AppConfig.PREF_SOCKS_ENABLE_UDP, AppConfig.DEFAULT_SOCKS_ENABLE_UDP)
-        if (socksUsername != null && socksPassword != null) {
-            inbound1.settings?.auth = "password"
-            inbound1.settings?.accounts = listOf(
-                V2rayConfig.InboundBean.InSettingsBean.SocksAccountBean(
-                    user = socksUsername,
-                    pass = socksPassword
-                )
+        inbound1.settings?.auth = "password"
+        inbound1.settings?.accounts = listOf(
+            V2rayConfig.InboundBean.InSettingsBean.SocksAccountBean(
+                user = socksUsername,
+                pass = socksPassword
             )
-        } else {
-            inbound1.settings?.auth = "noauth"
-            inbound1.settings?.accounts = null
-        }
+        )
         val fakedns = MmkvManager.decodeSettingsBool(AppConfig.PREF_FAKE_DNS_ENABLED) == true
         val sniffAllTlsAndHttp =
             MmkvManager.decodeSettingsBool(AppConfig.PREF_SNIFFING_ENABLED, true) != false

@@ -51,13 +51,20 @@ class TProxyService(
             writeText(configContent)
         }
 //        LogUtil.i(AppConfig.TAG, "Config file created: ${configFile.absolutePath}")
-        LogUtil.d(AppConfig.TAG, "HevSocks5Tunnel Config content:\n$configContent")
+        // Chapar: the config holds the local SOCKS port and its per-start user name and password; never log it.
 
         try {
 //            LogUtil.i(AppConfig.TAG, "TProxyStartService...")
             TProxyStartService(configFile.absolutePath, vpnInterface.fd)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "HevSocks5Tunnel exception: ${e.message}")
+        } finally {
+            // Chapar: the file holds this start's SOCKS credentials. The tunnel reads it while starting,
+            // so remove it shortly afterwards instead of leaving it in the app's files.
+            Thread {
+                Thread.sleep(5_000)
+                configFile.delete()
+            }.apply { isDaemon = true }.start()
         }
     }
 

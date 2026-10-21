@@ -1,0 +1,20 @@
+[
+  {
+    "remarks": "Block QUIC (UDP 443)",
+    "outboundTag": "block",
+    "port": "443",
+    "network": "udp"
+  },
+  {
+    "remarks": "Keep local network addresses direct",
+    "outboundTag": "direct",
+    "ip": [
+      "geoip:private"
+    ]
+  },
+  {
+    "remarks": "Everything else through the VPN",
+    "port": "0-65535",
+    "outboundTag": "proxy"
+  }
+]

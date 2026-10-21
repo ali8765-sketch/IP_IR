@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chapar mark, one color (themed icons) (half sun, three rays, horizon) on the 108dp adaptive-icon grid; the 32-unit logo scaled by 1.75 and centred. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40.875,63.625A13.125,13.125 0,0 1,67.125 63.625Z" />
+    <path
+        android:pathData="M54,33.875L54,40.875M38.6,42.1L43.15,46.65M69.4,42.1L64.85,46.65"
+        android:strokeWidth="4.375"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M32.125,71.5L75.875,71.5"
+        android:strokeWidth="4.375"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+</vector>

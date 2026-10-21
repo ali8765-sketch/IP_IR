@@ -2,12 +2,18 @@ package com.v2ray.ang.util
 
 import android.util.Log
 import com.v2ray.ang.AppConfig
-import com.v2ray.ang.handler.MmkvManager
 import java.util.Locale
 
 object LogUtil {
 
     private const val DEFAULT_LEVEL = "warning"
+
+    /**
+     * Chapar: the app and core log level is fixed at warning. At info or debug, upstream writes the
+     * full connection config (with the key) and the address of every connection to logcat, which
+     * conflicts with Chapar's no-logs rule (SECURITY.md). The upstream setting is ignored.
+     */
+    const val FIXED_LEVEL = DEFAULT_LEVEL
     private const val CACHE_UNSET = Int.MIN_VALUE
 
     @Volatile
@@ -27,7 +33,7 @@ object LogUtil {
 
     @Suppress("unused")
     fun refreshLogLevel() {
-        cachedMinPriority = parsePriority(MmkvManager.decodeSettingsString(AppConfig.PREF_LOGLEVEL, DEFAULT_LEVEL))
+        cachedMinPriority = parsePriority(FIXED_LEVEL)
     }
 
     private fun minPriority(): Int {
@@ -41,7 +47,7 @@ object LogUtil {
             if (current != CACHE_UNSET) {
                 current
             } else {
-                parsePriority(MmkvManager.decodeSettingsString(AppConfig.PREF_LOGLEVEL, DEFAULT_LEVEL)).also {
+                parsePriority(FIXED_LEVEL).also {
                     cachedMinPriority = it
                 }
             }

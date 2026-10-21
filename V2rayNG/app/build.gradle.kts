@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,16 +7,28 @@ plugins {
     id("com.jaredsburrows.license")
 }
 
+// Chapar: the API address and the Google Web client ID come from a git-ignored file, because the
+// repository is public and must not name the server (Chapar AGENTS rule 1). Copy
+// chapar.local.properties.example to chapar.local.properties next to settings.gradle.kts.
+val chaparProps = Properties().apply {
+    rootProject.file("chapar.local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 android {
     namespace = "com.v2ray.ang"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.v2ray.ang"
+        // Chapar fork of v2rayNG 2.3.11. The Kotlin namespace stays com.v2ray.ang so upstream merges stay small.
+        applicationId = "org.chapar.vpn"
         minSdk = 24
         targetSdk = 37
-        versionCode = 751
-        versionName = "2.3.11"
+        versionCode = 1
+        versionName = "0.1.0"
+        // Utils.isXray() read this from the upstream package name, which this fork changes.
+        buildConfigField("boolean", "IS_XRAY", "true")
+        buildConfigField("String", "CHAPAR_API_URL", "\"${chaparProps.getProperty("CHAPAR_API_URL", "")}\"")
+        buildConfigField("String", "CHAPAR_WEB_CLIENT_ID", "\"${chaparProps.getProperty("CHAPAR_WEB_CLIENT_ID", "")}\"")
 
         val abiFilterList = (properties["ABI_FILTERS"] as? String)?.split(';')
         splits {
@@ -92,7 +106,7 @@ android {
                 .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
                 .forEach { output ->
                     val abi = output.getFilter("ABI") ?: "universal"
-                    output.outputFileName = "v2rayNG_${variant.versionName}-fdroid_${abi}.apk"
+                    output.outputFileName = "Chapar_${variant.versionName}-fdroid_${abi}.apk"
                     if (versionCodes.containsKey(abi)) {
                         output.versionCodeOverride =
                             (100 * variant.versionCode + versionCodes[abi]!!).plus(5000000)
@@ -112,7 +126,7 @@ android {
                     else
                         "universal"
 
-                    output.outputFileName = "v2rayNG_${variant.versionName}_${abi}.apk"
+                    output.outputFileName = "Chapar_${variant.versionName}_${abi}.apk"
                     if (versionCodes.containsKey(abi)) {
                         output.versionCodeOverride =
                             (1000000 * versionCodes[abi]!!).plus(variant.versionCode)
@@ -130,18 +144,9 @@ android {
 
     androidResources {
         generateLocaleConfig = true
-        localeFilters += listOf(
-            "en",
-            "zh-rCN",
-            "zh-rTW",
-            "vi",
-            "ru",
-            "fa",
-            "ar",
-            "az",
-            "bn",
-            "bqi-rIR"
-        )
+        // Chapar: English only (D-021). Upstream's translations would mix other languages and the v2rayNG
+        // name into Chapar's toasts and notification on phones set to Persian or Arabic.
+        localeFilters += listOf("en")
     }
 
     packaging {
@@ -211,6 +216,11 @@ dependencies {
 
     // Reorderable list
     implementation(libs.reorderable)
+
+    // Chapar: Google sign-in (Credential Manager)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
 
     // Testing Libraries
     testImplementation(platform(libs.junit.bom))

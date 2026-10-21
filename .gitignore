@@ -67,3 +67,6 @@ V2rayNG/app/google-services.json
 # Ignore OS-specific files
 Thumbs.db
 .DS_Store
+
+# Chapar: server address and client ID stay out of the public repository
+V2rayNG/chapar.local.properties

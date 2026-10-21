@@ -30,17 +30,18 @@ import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.random.Random
 
 object SettingsManager {
 
+    /** The local SOCKS port and credentials of this process's current core start; see [SocksSession]. */
     @Volatile
-    private var runtimeSocksPort: Int? = null
+    private var socksSession: SocksSession? = null
 
     fun initApp(context: Context) {
         ensureDefaultSettings()
         //ensureDefaultSubscription()
         initRoutingRulesets(context)
+        migrateChaparDefaults(context)
         migrateServerListToSubscriptions()
         migrateHysteria2PinSHA256()
     }
@@ -52,9 +53,32 @@ object SettingsManager {
     private fun initRoutingRulesets(context: Context) {
         val exist = MmkvManager.decodeRoutingRulesets()
         if (exist.isNullOrEmpty()) {
-            val rulesetList = getPresetRoutingRulesets(context)
+            // Chapar: the first-run preset sends everything through the proxy (see ChaparRouting).
+            val rulesetList = getPresetRoutingRulesets(context, RoutingType.CHAPAR)
             MmkvManager.encodeRoutingRulesets(rulesetList)
         }
+    }
+
+    /**
+     * Chapar: moves an install to the Chapar routing preset once. Upstream's first-run preset
+     * (geosite:cn and geoip:cn direct) lets some traffic leave from the real address, so rules stored by
+     * an older build are replaced, as is the domestic DNS default. A stored marker makes this run once
+     * per [ChaparRouting.VERSION]; it is written only after the new rules are stored.
+     */
+    private fun migrateChaparDefaults(context: Context) {
+        val storedVersion = MmkvManager.decodeSettingsInt(AppConfig.PREF_CHAPAR_ROUTING_VERSION, 0)
+        if (!ChaparRouting.needsMigration(storedVersion)) return
+
+        val rulesets = ChaparRouting.migratedRulesets(storedVersion, getPresetRoutingRulesets(context, RoutingType.CHAPAR))
+        if (rulesets == null) {
+            LogUtil.e(AppConfig.TAG, "Chapar: routing preset unreadable; migration will run again at the next start")
+            return
+        }
+        MmkvManager.encodeRoutingRulesets(rulesets)
+        if (ChaparRouting.isLegacyDomesticDns(MmkvManager.decodeSettingsString(AppConfig.PREF_DOMESTIC_DNS))) {
+            MmkvManager.encodeSettings(AppConfig.PREF_DOMESTIC_DNS, AppConfig.DNS_DIRECT)
+        }
+        MmkvManager.encodeSettings(AppConfig.PREF_CHAPAR_ROUTING_VERSION, ChaparRouting.VERSION)
     }
 
     /**
@@ -256,32 +280,26 @@ object SettingsManager {
      * Get the SOCKS port.
      * @return The SOCKS port.
      */
-    fun getSocksPort(): Int {
-        val port =
-            if (IsDynamicSocksPort()) {
-                runtimeSocksPort ?: refreshRuntimeSocksPort()
-            } else {
-                Utils.parseInt(MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_PORT), AppConfig.PORT_SOCKS.toInt())
-            }
-        return port ?: AppConfig.PORT_SOCKS.toInt()
+    fun getSocksPort(): Int = socksSession().port
+
+    /**
+     * Chapar: starts a new local SOCKS session (free port, random user name and password) for the
+     * next core start. The core's inbound and hev-socks5-tunnel read it through [getSocksPort],
+     * [getSocksUsername], and [getSocksPassword] in the same process, so call this before either is configured.
+     */
+    @Synchronized
+    fun refreshRuntimeSocksPort(): Int {
+        val session = SocksSession.create()
+        socksSession = session
+        return session.port
     }
+
+    fun getSocksUsername(): String = socksSession().username
+
+    fun getSocksPassword(): String = socksSession().password
 
     @Synchronized
-    fun refreshRuntimeSocksPort(): Int? {
-        if (IsDynamicSocksPort()) {
-            runtimeSocksPort = generateRandomSocksPort()
-            return runtimeSocksPort
-        }
-        return null
-    }
-
-    fun getSocksUsername(): String? {
-        return MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_USERNAME)?.trim()?.takeIf { it.isNotEmpty() }
-    }
-
-    fun getSocksPassword(): String? {
-        return MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_PASSWORD)?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    private fun socksSession(): SocksSession = socksSession ?: SocksSession.create().also { socksSession = it }
 
     /**
      * Get the HTTP port.
@@ -289,14 +307,6 @@ object SettingsManager {
      */
     fun getHttpPort(): Int {
         return getSocksPort() + if (Utils.isXray()) 0 else 1
-    }
-
-    private fun IsDynamicSocksPort(): Boolean {
-        return MmkvManager.decodeSettingsBool(AppConfig.PREF_DYNAMIC_SOCKS_PORT, false)
-    }
-
-    private fun generateRandomSocksPort(): Int {
-        return Random.nextInt(10000, 65535)
     }
 
     /**

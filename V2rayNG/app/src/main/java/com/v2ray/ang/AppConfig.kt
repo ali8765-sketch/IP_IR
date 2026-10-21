@@ -35,6 +35,9 @@ object AppConfig {
     const val PREF_VPN_MTU = "pref_vpn_mtu"
     const val PREF_ROUTING_DOMAIN_STRATEGY = "pref_routing_domain_strategy"
     const val PREF_ROUTING_RULESET = "pref_routing_ruleset"
+
+    /** Chapar: the routing preset version this install was migrated to (see ChaparRouting). */
+    const val PREF_CHAPAR_ROUTING_VERSION = "chapar_routing_version"
     const val PREF_MUX_ENABLED = "pref_mux_enabled"
     const val PREF_MUX_CONCURRENCY = "pref_mux_concurrency"
     const val PREF_MUX_XUDP_CONCURRENCY = "pref_mux_xudp_concurrency"
@@ -147,7 +150,9 @@ object AppConfig {
 
     /** DNS server addresses. */
     const val DNS_PROXY = "https://cloudflare-dns.com/dns-query"
-    const val DNS_DIRECT = "223.5.5.5"
+    // Chapar: was AliDNS (223.5.5.5), a domestic resolver reached from the real address. Chapar has no
+    // direct domain rules, so this server is not queried; if one is ever added, it is not a China resolver.
+    const val DNS_DIRECT = "1.1.1.1"
     const val DNS_VPN = "1.1.1.1"
     const val GEOSITE_PRIVATE = "geosite:private"
     const val GEOSITE_CN = "geosite:cn"
@@ -187,6 +192,9 @@ object AppConfig {
     const val MSG_STATE_STOP = 4
     const val MSG_STATE_STOP_SUCCESS = 41
     const val MSG_STATE_RESTART = 5
+
+    /** Chapar: restart only the core with the newly selected profile; the VPN interface stays up (no leak window). */
+    const val MSG_STATE_RELOAD = 9
     const val MSG_MEASURE_DELAY = 6
     const val MSG_MEASURE_DELAY_RESULT = 61
     const val MSG_MEASURE_DELAY_CANCEL = 62

@@ -11,6 +11,7 @@ import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.core.LauncherManager
+import com.v2ray.ang.ui.chapar.ChaparActivity
 
 class WidgetProvider : AppWidgetProvider() {
     /**
@@ -36,14 +37,25 @@ class WidgetProvider : AppWidgetProvider() {
      */
     private fun updateWidgetBackground(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, isRunning: Boolean) {
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_switch)
-        val intent = Intent(context, WidgetProvider::class.java)
-        intent.action = AppConfig.BROADCAST_ACTION_WIDGET_CLICK
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            R.id.layout_switch,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        // Chapar (D-042): when running, a tap stops the VPN. When stopped, a tap opens the Chapar screen,
+        // because a start needs a fresh key from Connect, which only that screen does.
+        val pendingIntent = if (isRunning) {
+            val intent = Intent(context, WidgetProvider::class.java)
+            intent.action = AppConfig.BROADCAST_ACTION_WIDGET_CLICK
+            PendingIntent.getBroadcast(
+                context,
+                R.id.layout_switch,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        } else {
+            PendingIntent.getActivity(
+                context,
+                R.id.layout_switch,
+                Intent(context, ChaparActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }
         remoteViews.setOnClickPendingIntent(R.id.layout_switch, pendingIntent)
         if (isRunning) {
             remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.ic_stop_24dp)
@@ -68,10 +80,9 @@ class WidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (AppConfig.BROADCAST_ACTION_WIDGET_CLICK == intent.action) {
+            // Chapar (D-042): a click only stops. Starting goes through the Chapar screen (see above).
             if (CoreServiceManager.isRunning()) {
                 LauncherManager.stopService(context)
-            } else {
-                LauncherManager.startServiceFromToggle(context)
             }
         } else if (AppConfig.BROADCAST_ACTION_ACTIVITY == intent.action) {
             AppWidgetManager.getInstance(context)?.let { manager ->
