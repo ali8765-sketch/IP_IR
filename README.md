@@ -44,8 +44,13 @@ off (`CoreConfigManager.kt`). The "Report a problem" screen only shows fixed tex
 | `BIND_VPN_SERVICE` | To be a VPN (Android asks you once). |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`, `POST_NOTIFICATIONS` | To keep the VPN running and show its notification. |
 | `BIND_QUICK_SETTINGS_TILE` | The quick-settings tile to connect and disconnect. |
+| `WAKE_LOCK` | Added by AndroidX WorkManager (part of v2rayNG); keeps the CPU awake while a background task runs. |
+| `USE_BIOMETRIC`, `USE_FINGERPRINT` | Added by the AndroidX Biometric library (part of v2rayNG). Chapar never asks for a fingerprint or face. |
+| `org.chapar.vpn.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Added by AndroidX Core. It belongs to the app itself, so other apps cannot send to its internal receivers. |
 
-The app does not ask for contacts, location, camera, microphone, storage, or phone permissions.
+Android grants all of these without asking, except the VPN and notification permissions. The app does not ask
+for contacts, location, camera, microphone, storage, or phone permissions, and it does not start at boot.
+`aapt2 dump badging <apk>` lists the permissions of any APK.
 
 ### What you cannot check here
 
@@ -78,8 +83,9 @@ The first commit of this repository's own work sits directly on top of v2rayNG's
    that project's README) into `V2rayNG/app/libs/`, and the tunnel with `./compile-hevtun.sh` (Android NDK).
 3. Copy `V2rayNG/chapar.local.properties.example` to `V2rayNG/chapar.local.properties` and fill in the API
    address and the Google client ID (the values are in our published APK; anyone can read them there).
-4. With JDK 17: `cd V2rayNG && ./gradlew :app:testPlaystoreReleaseUnitTest :app:assemblePlaystoreRelease`.
-   This gives an unsigned APK.
+4. With JDK 17: `cd V2rayNG && ./gradlew :app:testPlaystoreDebugUnitTest :app:assemblePlaystoreRelease`.
+   This gives unsigned APKs in `app/build/outputs/apk/playstore/release/`. Our releases are these files,
+   aligned with `zipalign -P 16 4` and signed with `apksigner`.
 
 ## Check our APK
 

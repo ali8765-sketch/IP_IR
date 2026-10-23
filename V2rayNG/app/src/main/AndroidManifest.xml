@@ -42,6 +42,10 @@
         android:minSdkVersion="34" />
     <!-- <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- WorkManager adds this for its reboot receiver; Chapar schedules no work that must survive a reboot. -->
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED"
+        tools:node="remove" />
 
     <application
         android:name=".AngApplication"
