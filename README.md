@@ -19,6 +19,13 @@
 - ممکن است چند سایت یا درگاه پرداخت ایرانی آی‌پی سرور ما را قبول نکنند.
 - چاپار برای استفاده از داخل ایران ساخته نشده است.
 
+### نسخهٔ آزمایشی
+
+چاپار در **مرحلهٔ اول راه‌اندازی** است:
+
+- فعلاً ظرفیت **۵۰ نفر** را دارد. وقتی پر شود، ثبت‌نام بسته می‌شود. در مرحله‌های بعد ظرفیت بیشتر می‌شود.
+- برای **دانلود سنگین و مداوم** (فیلم، تورنت، فایل‌های بزرگ) ساخته نشده است. کاربرد اصلی‌اش استفاده از سایت‌ها و خدمات ایرانی است. اگر کسی در چند دقیقه حجم زیادی دانلود کند، سرعتش برای یک ساعت کم می‌شود تا سرویس برای همه سریع بماند.
+
 **دانلود:** [آخرین نسخه](https://github.com/ali8765-sketch/IP_IR/releases/latest)
 
 </div>
@@ -30,6 +37,13 @@ you a foreign IP address to get around filtering; Chapar does the opposite. Its 
 that refuse visitors from abroad (banks, government services, shops, payment gateways) see an **Iranian IP
 address**, as if you were in Iran. Other websites are reached through our server in Europe. It is not meant for
 use inside Iran, and a few Iranian sites or payment gateways may still refuse our server's address.
+
+### Early test phase
+
+Chapar is in its **first launch phase**: it has room for **50 people** for now (sign-up closes when it is full)
+and will grow in later phases. It is **not meant for heavy, continuous downloads** (films, torrents, large
+files); its purpose is Iranian sites and services. Someone who downloads a lot within a few minutes is slowed
+down for an hour, so the service stays fast for everyone.
 
 This repository is the complete source code of the Android app, published so that anyone can check what the
 app does, build it themselves, and compare it with the APK we publish.
