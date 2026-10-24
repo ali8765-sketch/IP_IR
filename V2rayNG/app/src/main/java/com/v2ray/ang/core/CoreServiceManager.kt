@@ -60,6 +60,10 @@ object CoreServiceManager {
     @Volatile
     private var isReloading = false
 
+    /** Chapar: a start is between registering the message receiver and the core's first launch returning. */
+    @Volatile
+    private var isStarting = false
+
     /**
      * Chapar: stopping and reloading the core run one at a time, in order, on this thread. A second reload
      * used to be dropped while one ran (the screen showed one mode while the core ran the other), and a stop
@@ -134,10 +138,15 @@ object CoreServiceManager {
         mFilter.addAction(Intent.ACTION_SCREEN_ON)
         mFilter.addAction(Intent.ACTION_SCREEN_OFF)
         mFilter.addAction(Intent.ACTION_USER_PRESENT)
-        ContextCompat.registerReceiver(service, mMsgReceive, mFilter, Utils.receiverFlags())
+        isStarting = true
+        try {
+            ContextCompat.registerReceiver(service, mMsgReceive, mFilter, Utils.receiverFlags())
 
-        currentVpnInterface = vpnInterface
-        launchCore(service, vpnInterface)
+            currentVpnInterface = vpnInterface
+            launchCore(service, vpnInterface)
+        } finally {
+            isStarting = false
+        }
         startNetworkMonitor(service)
     }
 
@@ -499,14 +508,8 @@ object CoreServiceManager {
                 AppConfig.MSG_REGISTER_CLIENT -> {
                     // Chapar: an ordered query asks whether a daemon is there at all (ChaparPlatform).
                     if (isOrderedBroadcast) resultCode = Activity.RESULT_OK
-                    if (isRunning() || isReloading) {
-                        MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_RUNNING, "")
-                    } else {
-                        // Chapar: this receiver is registered only between a start and a stop, so a service
-                        // without a running core is one whose reload failed: the VPN interface is up (blocking
-                        // traffic) and the start lock is held. Report the failure; the screen then stops the
-                        // service before the next start instead of waiting 45 seconds for the start lock.
-                        MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_START_FAILURE, "")
+                    registerClientReply(isRunning(), isReloading, isStarting)?.let {
+                        MessageHelper.sendMsg2UI(serviceControl.getService(), it, "")
                     }
                 }
 
@@ -579,4 +582,21 @@ object CoreServiceManager {
             }
         }
     }
+}
+
+/**
+ * Chapar: the daemon's answer to the screen's state query (MSG_REGISTER_CLIENT), or null for no answer.
+ * The message receiver is registered only from a start to a stop, so:
+ * - running or reloading: running;
+ * - starting (receiver registered, first launch not returned yet): no answer, the start's own result follows.
+ *   Answering "running" would show Connected for a start that may still fail, and "failed" would show a
+ *   false failure while the start is fine;
+ * - otherwise the start finished but no core runs: a reload failed, the VPN interface is up (blocking traffic)
+ *   and the start lock is held. Report the failure; the screen then stops the service before the next start
+ *   instead of waiting 45 seconds for the start lock.
+ */
+internal fun registerClientReply(isRunning: Boolean, isReloading: Boolean, isStarting: Boolean): Int? = when {
+    isRunning || isReloading -> AppConfig.MSG_STATE_RUNNING
+    isStarting -> null
+    else -> AppConfig.MSG_STATE_START_FAILURE
 }
