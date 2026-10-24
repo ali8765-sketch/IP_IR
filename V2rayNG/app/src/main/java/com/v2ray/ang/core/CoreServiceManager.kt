@@ -43,6 +43,9 @@ import libv2ray.CoreController
 import libv2ray.ProcessFinder
 import java.lang.ref.SoftReference
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 object CoreServiceManager {
 
@@ -56,6 +59,15 @@ object CoreServiceManager {
 
     @Volatile
     private var isReloading = false
+
+    /**
+     * Chapar: stopping and reloading the core run one at a time, in order, on this thread. A second reload
+     * used to be dropped while one ran (the screen showed one mode while the core ran the other), and a stop
+     * racing a handover reload left a core running without a service, so the next start failed silently.
+     */
+    private val lifecycle = Executors.newSingleThreadExecutor { Thread(it, "core-lifecycle").apply { isDaemon = true } }
+
+    private enum class Reload { DONE, NOT_RUNNING, FAILED }
 
     /** Tun descriptor the core was started with, null in the proxy only and root run modes. */
     private var currentVpnInterface: ParcelFileDescriptor? = null
@@ -89,14 +101,18 @@ object CoreServiceManager {
      * Starts the V2Ray core service.
      */
     fun startCoreLoop(vpnInterface: ParcelFileDescriptor?): Boolean {
-        if (isRunning()) {
-            LogUtil.w(AppConfig.TAG, "StartCore-Manager: Core already running")
-            return false
-        }
-
         val service = getService()
         if (service == null) {
             LogUtil.e(AppConfig.TAG, "StartCore-Manager: Service is null")
+            return false
+        }
+
+        // Chapar: a stop that is still finishing (stopCoreLoop waits only so long) must end before this start.
+        awaitLifecycle("start")
+        if (isRunning()) {
+            LogUtil.w(AppConfig.TAG, "StartCore-Manager: Core already running")
+            // Chapar: tell the screen; it used to fall back to "not connected" with no message.
+            MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, "Core already running")
             return false
         }
 
@@ -197,15 +213,21 @@ object CoreServiceManager {
         networkMonitor = null
         currentVpnInterface = null
 
-        if (isRunning()) {
-            CoroutineScope(Dispatchers.IO).launch {
+        // Chapar: the stop runs after any reload already queued, so a reload can never start a core after
+        // it. "Stopped" is reported only once the core has stopped, or after STOP_WAIT_MS on this (main)
+        // thread; a start waits for the rest. Before, it was reported at once and a quick Connect found the
+        // old core still running.
+        lifecycle.execute {
+            if (isRunning()) {
                 try {
                     coreController.stopLoop()
                 } catch (e: Exception) {
+                    // The core keeps running; the next start reports "already running" instead of failing silently.
                     LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to stop V2Ray loop", e)
                 }
             }
         }
+        awaitLifecycle("stop")
 
         // Close existing browser dialer
         CoreNativeManager.reconcileBrowserDialer("")
@@ -250,14 +272,14 @@ object CoreServiceManager {
      * The config is rebuilt on purpose, outbound server domains are resolved while building it and
      * an address resolved on a network that is gone can be unusable on the new one.
      *
-     * @return True if the core is running again.
+     * Chapar: runs on the lifecycle thread and waits there behind any other reload or stop, then reads
+     * the selected profile, so the last mode switch always wins. Blocks: never call it on the main thread.
      */
-    private fun reloadCore(): Boolean {
-        if (isReloading) return false
-        val service = getService() ?: return false
-        if (!isRunning()) return false
+    private fun reloadCore(): Reload = lifecycle.submit<Reload> {
+        val service = getService() ?: return@submit Reload.NOT_RUNNING
+        if (!isRunning()) return@submit Reload.NOT_RUNNING
 
-        return try {
+        try {
             val tunFd = currentVpnInterface
 
             isReloading = true
@@ -268,16 +290,32 @@ object CoreServiceManager {
             launchCore(service, tunFd, isReload = true)
 
             LogUtil.i(AppConfig.TAG, "StartCore-Manager: Core reload finished")
-            true
+            Reload.DONE
         } catch (e: Exception) {
             val message = e.message?.takeUnless { it.isBlank() } ?: e.javaClass.simpleName
             LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to reload core: $message", e)
             MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, message)
-            false
+            Reload.FAILED
         } finally {
             isReloading = false
         }
+    }.get()
+
+    /**
+     * Chapar: waits until the stops and reloads queued so far have finished, at most [STOP_WAIT_MS] (it runs on
+     * the main thread). A stop that takes longer still runs before anything queued after it.
+     */
+    private fun awaitLifecycle(phase: String) {
+        try {
+            lifecycle.submit {}.get(STOP_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: TimeoutException) {
+            LogUtil.w(AppConfig.TAG, "StartCore-Manager: $phase: core stop or reload still running after ${STOP_WAIT_MS} ms")
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "StartCore-Manager: $phase: waiting for the core lifecycle failed", e)
+        }
     }
+
+    private const val STOP_WAIT_MS = 3_000L
 
     /**
      * Queries and resets all outbound traffic counters in one core call.
@@ -459,10 +497,16 @@ object CoreServiceManager {
             val serviceControl = serviceControl?.get() ?: return
             when (intent?.getIntExtra("key", 0)) {
                 AppConfig.MSG_REGISTER_CLIENT -> {
-                    if (isRunning()) {
+                    // Chapar: an ordered query asks whether a daemon is there at all (ChaparPlatform).
+                    if (isOrderedBroadcast) resultCode = Activity.RESULT_OK
+                    if (isRunning() || isReloading) {
                         MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_RUNNING, "")
                     } else {
-                        MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_NOT_RUNNING, "")
+                        // Chapar: this receiver is registered only between a start and a stop, so a service
+                        // without a running core is one whose reload failed: the VPN interface is up (blocking
+                        // traffic) and the start lock is held. Report the failure; the screen then stops the
+                        // service before the next start instead of waiting 45 seconds for the start lock.
+                        MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_START_FAILURE, "")
                     }
                 }
 
@@ -504,8 +548,11 @@ object CoreServiceManager {
                         try {
                             // On failure reloadCore reports START_FAILURE and the VPN interface stays up without
                             // a core: traffic is blocked rather than sent over the real network (fail closed).
-                            if (reloadCore()) {
-                                MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_START_SUCCESS, "")
+                            when (reloadCore()) {
+                                Reload.DONE -> MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_START_SUCCESS, "")
+                                // Chapar: a switch that could not run must not leave the screen on the new mode.
+                                Reload.NOT_RUNNING -> MessageHelper.sendMsg2UI(serviceControl.getService(), AppConfig.MSG_STATE_NOT_RUNNING, "")
+                                Reload.FAILED -> Unit
                             }
                         } finally {
                             pendingResult.finish()

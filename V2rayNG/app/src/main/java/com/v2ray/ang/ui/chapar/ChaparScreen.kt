@@ -262,6 +262,7 @@ private fun accountErrorText(error: AccountError): String = stringResource(
         AccountError.RATE_LIMITED -> R.string.chapar_error_rate_limited
         AccountError.SERVER_BUSY -> R.string.chapar_error_server_busy
         AccountError.INSECURE -> R.string.chapar_error_insecure
+        AccountError.LINK_REFUSED -> R.string.chapar_connect_failed
         AccountError.FAILED -> R.string.chapar_error_failed
     }
 )

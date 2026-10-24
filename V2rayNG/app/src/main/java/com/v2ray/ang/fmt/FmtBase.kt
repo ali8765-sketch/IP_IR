@@ -41,8 +41,11 @@ open class FmtBase {
      * @return a map of query parameters
      */
     fun getQueryParam(uri: URI): Map<String, String> {
+        // Chapar: a part without "=" (for example a trailing "&") threw, and a value containing "=" was cut.
         return uri.rawQuery.split("&")
-            .associate { it.split("=").let { (k, v) -> k to Utils.decodeURIComponent(v) } }
+            .map { it.split("=", limit = 2) }
+            .filter { it.size == 2 }
+            .associate { (k, v) -> k to Utils.decodeURIComponent(v) }
     }
 
     /**

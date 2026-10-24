@@ -34,10 +34,6 @@ class ChaparAccountService(
         data class Failed(val error: AccountError) : ConnectOutcome
     }
 
-    val isConfigured: Boolean get() = api.isConfigured
-
-    fun hasSession(): Boolean = runCatching { session.token() }.getOrNull() != null
-
     fun signIn(idToken: String, nickname: String?): SignInOutcome {
         val signedIn = try {
             api.signIn(idToken, nickname)
@@ -83,7 +79,7 @@ class ChaparAccountService(
         } ?: return ConnectOutcome.SignedOut.also { clearLocal() }
         return try {
             val links = ChaparLinks.accept(api.connect(token), expectedHost)
-                ?: return ConnectOutcome.Failed(AccountError.FAILED)
+                ?: return ConnectOutcome.Failed(AccountError.LINK_REFUSED)
             if (repository.replaceLink(links)) ConnectOutcome.Ready(newKey = true) else ConnectOutcome.Failed(AccountError.FAILED)
         } catch (e: ChaparApiException) {
             when {

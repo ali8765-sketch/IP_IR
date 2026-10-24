@@ -29,7 +29,7 @@ object SubscriptionUpdater {
      * Startup/boot callers should use the default mode so existing periodic work is kept.
      * Use forceReschedule=true only when the next run time needs to be recalculated from
      * the latest persisted subscription state (for example after a manual refresh).
-     * Call from: MainActivity.onCreate(), BootReceiver.onReceive().
+     * Call from: MainActivity.onCreate().
      */
     fun sync(
         context: Context = AngApplication.application,

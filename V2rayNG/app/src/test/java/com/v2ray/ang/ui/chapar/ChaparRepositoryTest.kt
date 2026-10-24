@@ -69,6 +69,20 @@ class ChaparRepositoryTest {
         repo.clearAll()
         assertTrue(store.servers.isEmpty())
         assertEquals(setOf(FakeLinkStore.DEFAULT), store.subs.keys)
+        assertEquals(1, store.compactions) // the removed keys must not stay readable in the storage file
+    }
+
+    @Test
+    fun replacingTheSelectedProfileLeavesNoSelectionForTheCallerToFill() {
+        val old = store.addServer(FakeLinkStore.DEFAULT, "Chapar-Iran")
+        repo.select(old)
+        store.shareLinkRemarks = { listOf("Chapar-Iran", "Chapar-Tor") }
+
+        assertTrue(repo.replaceLink("vless://a\nvless://b"))
+
+        // ChaparViewModel.reloadProfiles selects the new profile of the chosen mode right after this.
+        assertEquals(null, repo.selectedGuid())
+        assertTrue(old !in store.servers.keys)
     }
 
     @Test

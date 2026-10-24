@@ -7,14 +7,15 @@ import com.v2ray.ang.ui.main.MainServiceEvent
  */
 object ChaparModes {
 
-    // Links from the server are named "Chapar-Iran" and "Chapar-Tor" (backend/chapar/profiles.py;
-    // test links from server/main/links.sh add "-<tag>"). Older links said "Free" for what is now
-    // Iran mode; anything that is not Tor is Iran mode. Match whole words only, so a name like
-    // "Toronto" is not Tor mode.
-    private val torWord = Regex("(^|[^a-z])tor([^a-z]|$)", RegexOption.IGNORE_CASE)
-
-    fun classify(remarks: String): ChaparMode =
-        if (torWord.containsMatchIn(remarks)) ChaparMode.TOR else ChaparMode.IRAN
+    // The naming contract with the server (ChaparLinks refuses any other name): "Chapar-Iran" or
+    // "Chapar-Tor", test links add "-<tag>". Older links said "Free" for what is now Iran mode. Only the
+    // word right after "Chapar-" counts, so "Chapar-Iran-Tor1" is Iran mode; anything that is not Tor
+    // is Iran mode.
+    fun classify(remarks: String): ChaparMode {
+        val words = remarks.split('-')
+        val isTor = words.size >= 2 && words[0].equals("Chapar", ignoreCase = true) && words[1].equals("Tor", ignoreCase = true)
+        return if (isTor) ChaparMode.TOR else ChaparMode.IRAN
+    }
 
     fun available(profiles: List<ChaparProfile>): Set<ChaparMode> =
         profiles.mapTo(LinkedHashSet()) { classify(it.remarks) }
@@ -46,8 +47,12 @@ object ChaparModes {
         is MainServiceEvent.StateStartFailure -> ConnectionState.Failed(event.message?.takeIf { it.isNotBlank() })
 
         // A failed start stops the service, which then reports "stopped": keep showing the failure until
-        // the user acts, instead of flashing it away.
-        MainServiceEvent.StateStopSuccess -> if (current is ConnectionState.Failed) current else ConnectionState.Disconnected
+        // the user acts, instead of flashing it away. While connecting, "stopped" is the answer to the stop
+        // sent before a new start (after a failure, or a restart for a new bypass list): the start follows.
+        MainServiceEvent.StateStopSuccess -> when (current) {
+            ConnectionState.Connecting, is ConnectionState.Failed -> current
+            else -> ConnectionState.Disconnected
+        }
         else -> null
     }
 }

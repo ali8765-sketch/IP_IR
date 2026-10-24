@@ -9,8 +9,9 @@ interface Tun2SocksControl {
     /**
      * Starts the tun2socks process with the appropriate parameters.
      * This initializes the VPN tunnel and connects it to the SOCKS proxy.
+     * @return false if the tunnel did not start (Chapar: the VPN must then not report itself connected).
      */
-    fun startTun2Socks()
+    fun startTun2Socks(): Boolean
 
     /**
      * Stops the tun2socks process and cleans up resources.

@@ -5,7 +5,7 @@ These rules apply to the service and service-adjacent paths listed in the reposi
 
 ## Process and lifecycle invariants
 
-- The daemon process `:RunSoLibV2RayDaemon` is the only authority for whether the native
+- The daemon process (`:daemon` in Chapar's manifest; upstream calls it `:RunSoLibV2RayDaemon`) is the only authority for whether the native
   core is running. Do not use a UI-process singleton, cached Boolean, bound-service
   assumption, or successful broadcast send as proof of daemon state.
 - Route every app-initiated VPN, proxy-only, and root start through `LauncherManager`.

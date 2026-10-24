@@ -33,6 +33,9 @@ enum class AccountError {
 
     /** The connection to Chapar could not be verified as secure (possible interception). */
     INSECURE,
+
+    /** Connect answered with links the app refuses (ChaparLinks): wrong host, name, or settings. */
+    LINK_REFUSED,
     FAILED,
 }
 

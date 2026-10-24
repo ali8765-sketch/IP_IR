@@ -21,6 +21,7 @@ import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.NotificationManager
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.root.RootLanSharing
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
@@ -78,8 +79,10 @@ class CoreVpnService : VpnService(), ServiceControl {
         NotificationManager.ensureForeground()
         // Always-on VPN restarts from OS deliver intent.action == SERVICE_INTERFACE or null intent.
         // Reset any stuck start lock left by a killed process to allow setupVpnService() to run.
+        // Chapar: only when no core runs. A lock held by a running core belongs to a working VPN, and
+        // setting it up again over the live one would tear that VPN down.
         val isSystemVpnStart = intent == null || intent.action == SERVICE_INTERFACE
-        if (isSystemVpnStart) {
+        if (isSystemVpnStart && !CoreServiceManager.isRunning()) {
             unlockStart()
         }
         if (!tryLockStart()) {
@@ -87,8 +90,8 @@ class CoreVpnService : VpnService(), ServiceControl {
             return START_NOT_STICKY
         }
         LogUtil.i(AppConfig.TAG, "StartCore-VPN: Service command received, systemVpnStart=$isSystemVpnStart")
-        // Chapar: a new local SOCKS port and credentials for this start, before the tunnel and the core
-        // read them (hev-socks5-tunnel in setupVpnService, the core's inbound in startService).
+        // Chapar: a new local SOCKS port and credentials for this start, before the core and the tunnel
+        // read them (both in startService).
         SettingsManager.refreshRuntimeSocksPort()
         if (!setupVpnService()) {
             unlockStart()
@@ -111,6 +114,16 @@ class CoreVpnService : VpnService(), ServiceControl {
         }
         if (!CoreServiceManager.startCoreLoop(mInterface)) {
             LogUtil.e(AppConfig.TAG, "StartCore-VPN: Failed to start core loop")
+            stopAllService()
+            return
+        }
+
+        // Chapar: the tunnel starts after the core has bound the local SOCKS port. The port was found free by
+        // binding and closing it (SocksSession); pointing the tunnel at it earlier left a moment in which another
+        // app could take the port and receive the tunnel's traffic and credentials. Now that app would make the
+        // core fail to start instead.
+        if (!runTun2socks()) {
+            MessageHelper.sendMsg2UI(this, AppConfig.MSG_STATE_START_FAILURE, "")
             stopAllService()
             return
         }
@@ -152,7 +165,6 @@ class CoreVpnService : VpnService(), ServiceControl {
             return false
         }
 
-        runTun2socks()
         return true
     }
 
@@ -304,8 +316,9 @@ class CoreVpnService : VpnService(), ServiceControl {
     /**
      * Runs the tun2socks process.
      * Starts the tun2socks process with the appropriate parameters.
+     * @return false if the tunnel is used but did not start.
      */
-    private fun runTun2socks() {
+    private fun runTun2socks(): Boolean {
         if (SettingsManager.isUsingHevTun()) {
             tun2SocksService = TProxyService(
                 context = applicationContext,
@@ -317,7 +330,7 @@ class CoreVpnService : VpnService(), ServiceControl {
             tun2SocksService = null
         }
 
-        tun2SocksService?.startTun2Socks()
+        return tun2SocksService?.startTun2Socks() ?: true
     }
 
     private fun stopAllService(isForced: Boolean = true) {

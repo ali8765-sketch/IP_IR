@@ -23,9 +23,12 @@ class ChaparModesTest {
     }
 
     @Test
-    fun onlyWholeWordsCount() {
+    fun onlyTheWordAfterChaparCounts() {
         assertEquals(ChaparMode.IRAN, ChaparModes.classify("Toronto"))
-        assertEquals(ChaparMode.IRAN, ChaparModes.classify("Tortoise"))
+        assertEquals(ChaparMode.IRAN, ChaparModes.classify("Chapar-Tortoise"))
+        assertEquals(ChaparMode.IRAN, ChaparModes.classify("Chapar-Iran (Tor-proof)"))
+        assertEquals(ChaparMode.IRAN, ChaparModes.classify("Chapar-Iran-Tor"))
+        assertEquals(ChaparMode.IRAN, ChaparModes.classify("Tor"))
         assertEquals(ChaparMode.IRAN, ChaparModes.classify(""))
     }
 
@@ -102,6 +105,18 @@ class ChaparModesTest {
         val afterFailure = ChaparModes.onServiceEvent(ConnectionState.Connecting, MainServiceEvent.StateStartFailure("port in use"))
         assertEquals(failed, afterFailure)
         assertEquals(failed, ChaparModes.onServiceEvent(failed, MainServiceEvent.StateStopSuccess))
+    }
+
+    @Test
+    fun theStopBeforeANewStartDoesNotEndTheStart() {
+        assertEquals(
+            ConnectionState.Connecting,
+            ChaparModes.onServiceEvent(ConnectionState.Connecting, MainServiceEvent.StateStopSuccess),
+        )
+        assertEquals(
+            ConnectionState.Disconnected,
+            ChaparModes.onServiceEvent(ConnectionState.Disconnecting, MainServiceEvent.StateStopSuccess),
+        )
     }
 
     @Test

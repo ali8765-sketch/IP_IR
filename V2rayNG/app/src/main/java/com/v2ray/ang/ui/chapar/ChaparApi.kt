@@ -84,7 +84,7 @@ class ChaparApi(
      * A new key for this account as share-link lines, one per mode (D-043). The server cancels the
      * previous key at the same moment, so a copied link stops working on the next Connect.
      */
-    fun connect(token: String): String = execute(post("/api/v1/connect", "", token)) { it.body.string() }
+    fun connect(token: String): String = execute(post("/api/v1/connect", "", token)) { it.limitedBody() }
 
     fun logout(token: String) {
         execute(post("/api/v1/logout", "", token)) { }
@@ -107,8 +107,15 @@ class ChaparApi(
     private fun Request.Builder.bearer(token: String) = header("Authorization", "Bearer $token")
 
     private fun call(request: Request): JsonObject = execute(request) { response ->
-        gson.fromJson(response.body.string(), JsonObject::class.java)
+        gson.fromJson(response.limitedBody(), JsonObject::class.java)
             ?: throw ChaparApiException(ChaparApiException.BAD_RESPONSE, response.code)
+    }
+
+    /** Every answer of this API is a few hundred bytes; a larger one is not from it and is never read whole. */
+    private fun Response.limitedBody(): String {
+        val source = body.source()
+        if (source.request(MAX_BODY_BYTES + 1)) throw ChaparApiException(ChaparApiException.BAD_RESPONSE, code)
+        return source.buffer.readUtf8()
     }
 
     /**
@@ -125,7 +132,7 @@ class ChaparApi(
             response.use {
                 if (it.isSuccessful) return onSuccess(it)
                 val code = runCatching {
-                    gson.fromJson(it.body.string(), JsonObject::class.java)?.get("error")?.asString
+                    gson.fromJson(it.limitedBody(), JsonObject::class.java)?.get("error")?.asString
                 }.getOrNull()
                 throw ChaparApiException(code ?: ChaparApiException.BAD_RESPONSE, it.code)
             }
@@ -141,11 +148,15 @@ class ChaparApi(
     private fun JsonObject.string(name: String): String =
         get(name)?.takeIf { it.isJsonPrimitive }?.asString ?: throw ChaparApiException(ChaparApiException.BAD_RESPONSE)
 
+    // These run after execute() returned, so a parse error must become a ChaparApiException here: a raw
+    // NumberFormatException would escape the callers and crash the app on every resume.
     private fun JsonObject.long(name: String): Long =
-        get(name)?.takeIf { it.isJsonPrimitive }?.asLong ?: throw ChaparApiException(ChaparApiException.BAD_RESPONSE)
+        get(name)?.takeIf { it.isJsonPrimitive }?.let { runCatching { it.asLong }.getOrNull() }
+            ?: throw ChaparApiException(ChaparApiException.BAD_RESPONSE)
 
     companion object {
         private val JSON = "application/json".toMediaType()
+        private const val MAX_BODY_BYTES = 64L * 1024
 
         /** Only failures that happen before anything was sent count as "offline" ([ChaparApiException.NETWORK]). */
         internal fun classify(e: IOException): String = when (e) {

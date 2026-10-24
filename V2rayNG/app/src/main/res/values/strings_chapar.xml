@@ -25,6 +25,8 @@
     <string name="chapar_mode_iran_note">Fast and private. Iranian sites see an Iranian address: they are reached through our server in Iran.</string>
     <string name="chapar_mode_tor_note">Slower, but websites can\'t see your IP. Some sites block Tor. Other apps on your phone can still find devices on your home network.</string>
     <string name="chapar_mode_unavailable">Not available right now</string>
+    <string name="chapar_mode_missing">This mode is not available right now. Choose the other mode and try again.</string>
+    <string name="chapar_start_refused">Android did not let Chapar start the VPN. Allow the VPN request, or turn off another app\'s always-on VPN, then try again.</string>
 
     <string name="chapar_welcome_title">Welcome to Chapar</string>
     <string name="chapar_welcome_body">Sign in with your Gmail account to connect.</string>
@@ -72,12 +74,11 @@
 
     <string name="chapar_bypass_title">Apps that skip the VPN</string>
     <string name="chapar_bypass_note">Choose apps that use your own internet connection.</string>
-    <string name="chapar_bypass_warning">Apps you choose here use your real internet connection and your real address. They are not protected by Chapar.</string>
+    <string name="chapar_bypass_warning">Apps you choose here use your real internet connection and your real address. They are not protected by Chapar. Android applies this to every app that shares a user ID with a chosen app (rare, mostly system apps).</string>
     <string name="chapar_bypass_search">Search apps</string>
     <string name="chapar_bypass_on">Skips the VPN</string>
     <string name="chapar_bypass_off">Uses the VPN</string>
     <string name="chapar_bypass_save">Save</string>
-    <string name="chapar_bypass_reconnect">Saved. Disconnect and connect again to apply it.</string>
     <string name="chapar_always_on_title">Block leaks</string>
     <string name="chapar_always_on_note">In Android\'s VPN settings, tap the gear next to Chapar and turn on \"Always-on VPN\" and \"Block connections without VPN\". Then your real address is never used if the VPN drops.</string>
 

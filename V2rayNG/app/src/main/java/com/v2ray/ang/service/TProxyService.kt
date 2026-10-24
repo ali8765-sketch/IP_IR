@@ -43,7 +43,7 @@ class TProxyService(
     /**
      * Starts the tun2socks process with the appropriate parameters.
      */
-    override fun startTun2Socks() {
+    override fun startTun2Socks(): Boolean {
 //        LogUtil.i(AppConfig.TAG, "Starting HevSocks5Tunnel via JNI")
 
         val configContent = buildConfig()
@@ -53,11 +53,16 @@ class TProxyService(
 //        LogUtil.i(AppConfig.TAG, "Config file created: ${configFile.absolutePath}")
         // Chapar: the config holds the local SOCKS port and its per-start user name and password; never log it.
 
-        try {
+        return try {
 //            LogUtil.i(AppConfig.TAG, "TProxyStartService...")
-            TProxyStartService(configFile.absolutePath, vpnInterface.fd)
+            // Chapar: false when a tunnel is already running or its thread could not start; ignoring it showed
+            // "Connected" while every packet into the VPN interface was dropped.
+            TProxyStartService(configFile.absolutePath, vpnInterface.fd).also {
+                if (!it) LogUtil.e(AppConfig.TAG, "HevSocks5Tunnel did not start")
+            }
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "HevSocks5Tunnel exception: ${e.message}")
+            false
         } finally {
             // Chapar: the file holds this start's SOCKS credentials. The tunnel reads it while starting,
             // so remove it shortly afterwards instead of leaving it in the app's files.

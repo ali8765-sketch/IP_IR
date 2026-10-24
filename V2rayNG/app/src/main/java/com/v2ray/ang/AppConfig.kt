@@ -64,9 +64,13 @@ object AppConfig {
     const val PREF_DYNAMIC_COLOR = "pref_dynamic_color"
     const val PREF_IPV6_ENABLED = "pref_ipv6_enabled"
     const val PREF_PREFER_IPV6 = "pref_prefer_ipv6"
+    // Chapar ignores this key: the core's inbound listens on loopback only (no sharing with other devices).
+    // Only upstream's unreachable settings screen and a toast in LauncherManager still read it.
     const val PREF_PROXY_SHARING = "pref_proxy_sharing_enabled"
     const val PREF_ENABLE_LOCAL_PROXY = "pref_enable_local_proxy"
     const val PREF_SOCKS_PORT = "pref_socks_port"
+    // Chapar ignores these three keys: every start gets a random port and random credentials (SocksSession).
+    // Do not wire them back in when merging upstream.
     const val PREF_DYNAMIC_SOCKS_PORT = "pref_dynamic_socks_port"
     const val PREF_SOCKS_USERNAME = "pref_socks_username"
     const val PREF_SOCKS_PASSWORD = "pref_socks_password"
@@ -76,6 +80,8 @@ object AppConfig {
     const val PREF_DNS_HOSTS = "pref_dns_hosts"
     const val PREF_DELAY_TEST_URL = "pref_delay_test_url"
     const val PREF_IP_API_URL = "pref_ip_api_url"
+    // Chapar ignores this key: the core's log level is fixed (LogUtil.FIXED_LEVEL), so no setting can turn on
+    // connection logs.
     const val PREF_LOGLEVEL = "pref_core_loglevel"
     const val PREF_OUTBOUND_DOMAIN_RESOLVE_METHOD = "pref_outbound_domain_resolve_method"
     const val PREF_MODE = "pref_mode"

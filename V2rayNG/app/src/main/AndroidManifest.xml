@@ -173,21 +173,8 @@
             android:name=".ui.subscription.SubEditActivity"
             android:windowSoftInputMode="stateUnchanged|adjustResize"
             android:exported="false" />
-        <activity
-            android:name=".ui.shortcut.ScScannerActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.shortcut.ScSwitchActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:process=":daemon"
-            android:theme="@style/AppThemeDayNight.NoActionBar.Translucent" />
-        <activity
-            android:name=".ui.shortcut.ScStartActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:process=":daemon"
-            android:theme="@style/AppThemeDayNight.NoActionBar.Translucent" />
+        <!-- Chapar (D-042): upstream's scanner, switch, and start shortcuts, its v2rayng:// URL importer, the
+             Tasker plugin, and BootReceiver are deleted. Starting needs a fresh key from Connect. -->
         <activity
             android:name=".ui.shortcut.ScStopActivity"
             android:excludeFromRecents="true"
@@ -195,10 +182,6 @@
             android:process=":daemon"
             android:theme="@style/AppThemeDayNight.NoActionBar.Translucent" />
 
-        <!-- Chapar (D-042): no importing links from other apps or v2rayng:// URLs; profiles come only from our backend. -->
-        <activity
-            android:name=".ui.UrlSchemeActivity"
-            android:exported="false" />
         <activity
             android:name=".ui.checkupdate.CheckUpdateActivity"
             android:exported="false" />
@@ -289,8 +272,6 @@
                 <action android:name="${applicationId}.action.activity" />
             </intent-filter>
         </receiver>
-        <!-- Chapar (D-042): BootReceiver is removed from the manifest. It started the stored key without
-             a Connect, and the key is fresh only after the user taps Connect. -->
 
         <service
             android:name=".service.QSTileService"
@@ -307,18 +288,6 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="tile" />
         </service>
-        <!-- =====================Tasker===================== -->
-        <!-- Chapar (D-042): the Tasker plugin lists and starts servers by ID, so it is closed to other apps. -->
-        <activity
-            android:name=".ui.shortcut.TaskerActivity"
-            android:exported="false"
-            android:icon="@mipmap/ic_launcher" />
-
-        <receiver
-            android:name=".receiver.TaskerReceiver"
-            android:exported="false"
-            android:process=":daemon" />
-        <!-- =====================Tasker===================== -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

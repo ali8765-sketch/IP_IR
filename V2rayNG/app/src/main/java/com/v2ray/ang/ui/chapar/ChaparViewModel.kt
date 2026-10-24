@@ -10,12 +10,10 @@ import com.v2ray.ang.AngApplication
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
-import com.v2ray.ang.core.LauncherManager
-import com.v2ray.ang.ui.base.BaseViewModel
-import com.v2ray.ang.ui.main.MainDataSource
-import com.v2ray.ang.ui.main.MainRepository
+import com.v2ray.ang.ui.main.MainServiceEvent
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -32,23 +30,24 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * State for the Chapar screen. Service events (running, started, failed) come from upstream's
- * [MainDataSource]; the account and its profiles from [ChaparAccountService]; stored profiles and
- * the selected mode from [ChaparRepository].
+ * State for the Chapar screen. Service events (running, started, failed) and the VPN controls come from
+ * [ChaparPlatform]; the account and its profiles from [ChaparAccountService]; stored profiles and the
+ * selected mode from [ChaparRepository].
  *
  * Long operations (Connect, sign-in, sign-out, deletion) run in [viewModelScope], so rotating the
  * phone or switching dark mode never leaves the screen stuck. Only the steps that need an Activity
  * (VPN permission, Google's account picker) happen in the activity.
  */
 class ChaparViewModel(
-    application: Application,
-    private val events: MainDataSource,
+    private val platform: ChaparPlatform,
     private val repository: ChaparRepository,
     private val account: ChaparAccountService,
     private val diagnostics: ChaparDiagnostics,
     private val bypass: BypassStore,
     private val installedApps: () -> List<InstalledApp>,
-) : BaseViewModel(application) {
+    /** Storage, network, and package-manager work; a test passes its own dispatcher. */
+    private val io: CoroutineDispatcher = Dispatchers.IO,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChaparUiState())
     val uiState: StateFlow<ChaparUiState> = _uiState.asStateFlow()
@@ -66,22 +65,24 @@ class ChaparViewModel(
     private var connectJob: Job? = null
     private var watchdog: Job? = null
 
+    /**
+     * Set when the user cancels a start whose request may still reach the daemon (the daemon process may not
+     * exist yet, so the stop sent with the cancel can arrive first and be lost). A start reported after
+     * that is stopped again. Cleared by the next Connect, by any stop or failure report, or after [WATCHDOG_MS].
+     */
+    private var cancelledStart: Job? = null
+
+    /** The activity asked the service to start during the current Connect. */
+    private var startSent = false
+
     init {
         viewModelScope.launch {
-            events.mainServiceEvent.collect { event ->
-                val before = _uiState.value
-                _uiState.update { state ->
-                    ChaparModes.onServiceEvent(state.connection, event)?.let { state.copy(connection = it) } ?: state
-                }
-                val after = _uiState.value.connection
-                if (after != ConnectionState.Connecting && after != ConnectionState.Disconnecting) watchdog?.cancel()
-                recordConnectionChange(before.connection, after, before.selectedMode)
-            }
+            platform.serviceEvents.collect(::onServiceEvent)
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(io) {
             try {
                 // Geo files for routing: same start-up work as upstream's main screen.
-                events.initAssets()
+                platform.initAssets()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
@@ -91,14 +92,41 @@ class ChaparViewModel(
         // The account is loaded by refresh(), which the activity calls from onResume.
     }
 
-    /** Re-reads the account and usage. Called on start and on resume. */
+    private fun onServiceEvent(event: MainServiceEvent) {
+        if (cancelledStart?.isActive == true) {
+            when (event) {
+                MainServiceEvent.StateStartSuccess, MainServiceEvent.StateRunning -> {
+                    // The cancelled start went through after all: stop it again.
+                    platform.stopVpn()
+                    _uiState.update { it.copy(connection = ConnectionState.Disconnecting) }
+                    startWatchdog()
+                    return
+                }
+
+                MainServiceEvent.StateStopSuccess, MainServiceEvent.StateNotRunning, is MainServiceEvent.StateStartFailure ->
+                    cancelledStart?.cancel()
+
+                else -> Unit
+            }
+        }
+        val before = _uiState.value
+        _uiState.update { state ->
+            ChaparModes.onServiceEvent(state.connection, event)?.let { state.copy(connection = it) } ?: state
+        }
+        val after = _uiState.value.connection
+        if (after != ConnectionState.Connecting && after != ConnectionState.Disconnecting) watchdog?.cancel()
+        recordConnectionChange(before.connection, after, before.selectedMode)
+    }
+
+    /** Re-reads the account and usage, and asks the daemon whether the VPN still runs. Called on start and on resume. */
     fun refresh() {
+        platform.queryServiceState()
         viewModelScope.launch { refreshAccount() }
     }
 
     private suspend fun refreshAccount() {
         val before = _uiState.value.account
-        val outcome = accountLock.withLock { withContext(Dispatchers.IO) { account.refresh() } }
+        val outcome = accountLock.withLock { withContext(io) { account.refresh() } }
         when (outcome) {
             ChaparAccountService.RefreshOutcome.SignedOut -> {
                 if (before is AccountState.SignedIn) diagnostics.record(ChaparEvent.SESSION_ENDED)
@@ -131,7 +159,7 @@ class ChaparViewModel(
             ConnectionState.Connected -> {
                 _uiState.update { it.copy(connection = ConnectionState.Disconnecting) }
                 startWatchdog()
-                LauncherManager.stopService(app)
+                platform.stopVpn()
             }
 
             ConnectionState.Disconnected, is ConnectionState.Failed -> connect(afterFailure = state.connection is ConnectionState.Failed)
@@ -140,22 +168,32 @@ class ChaparViewModel(
 
     /**
      * Gets a new key from the server (D-043), selects the profile for the chosen mode, and asks the
-     * activity to start the VPN. A failed start may still hold the VPN interface, so it is released first.
+     * activity to start the VPN. A failed start may still hold the VPN interface, so it is released first;
+     * its "stopped" answer keeps the screen on Connecting (ChaparModes.onServiceEvent).
      */
     private fun connect(afterFailure: Boolean) {
         if (connectJob?.isActive == true) return
+        cancelledStart?.cancel()
+        startSent = false
         val mode = _uiState.value.selectedMode
         _uiState.update { it.copy(connection = ConnectionState.Connecting) }
         connectJob = viewModelScope.launch {
             var starting = false
             try {
-                if (afterFailure) LauncherManager.stopService(app)
-                val outcome = accountLock.withLock { withContext(Dispatchers.IO) { account.connect() } }
+                if (afterFailure) platform.stopVpn()
+                val outcome = accountLock.withLock { withContext(io) { account.connect() } }
                 if (outcome is ChaparAccountService.ConnectOutcome.Ready) {
                     diagnostics.record(if (outcome.newKey) ChaparEvent.KEY_RECEIVED else ChaparEvent.KEY_REUSED, mode)
                     reloadProfiles(mode)
+                    if (ChaparModes.profileFor(mode, _uiState.value.profiles) == null) {
+                        // The server sent no link for the chosen mode: never start a different mode silently.
+                        diagnostics.record(ChaparEvent.MODE_MISSING, mode)
+                        platform.showError(R.string.chapar_mode_missing)
+                        return@launch
+                    }
                     starting = true
-                    startWatchdog()
+                    // The watchdog starts when the activity really asks for the start (onStartRequested): the
+                    // request waits while the screen is in the background.
                     _startRequests.send(Unit)
                     return@launch
                 }
@@ -184,7 +222,7 @@ class ChaparViewModel(
 
             is ChaparAccountService.ConnectOutcome.Failed -> {
                 diagnostics.record(ChaparEvent.KEY_FAILED, error = outcome.error)
-                toastError(connectErrorText(outcome.error))
+                platform.showError(connectErrorText(outcome.error))
             }
 
             is ChaparAccountService.ConnectOutcome.Ready -> Unit
@@ -195,7 +233,10 @@ class ChaparViewModel(
     private fun cancelConnection() {
         connectJob?.cancel()
         watchdog?.cancel()
-        LauncherManager.stopService(app)
+        platform.stopVpn()
+        cancelledStart?.cancel()
+        if (startSent) cancelledStart = viewModelScope.launch { delay(WATCHDOG_MS) }
+        startSent = false
         _uiState.update { it.copy(connection = ConnectionState.Disconnected) }
     }
 
@@ -207,7 +248,7 @@ class ChaparViewModel(
             val connection = _uiState.value.connection
             if (connection == ConnectionState.Connecting || connection == ConnectionState.Disconnecting) {
                 diagnostics.record(ChaparEvent.START_FAILED, _uiState.value.selectedMode)
-                LauncherManager.stopService(app)
+                platform.stopVpn()
                 _uiState.update { it.copy(connection = ConnectionState.Failed(null)) }
             }
         }
@@ -218,7 +259,7 @@ class ChaparViewModel(
 
     /** Re-reads the stored profiles; [mode] picks that mode's profile, for example after a new key. */
     private suspend fun reloadProfiles(mode: ChaparMode? = null) {
-        val (profiles, selected) = withContext(Dispatchers.IO) {
+        val (profiles, selected) = withContext(io) {
             val profiles = repository.profiles()
             val stored = repository.selectedGuid()
             val selected = mode?.let { ChaparModes.profileFor(it, profiles) }
@@ -264,7 +305,7 @@ class ChaparViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(busy = true, accountError = null) }
             try {
-                val outcome = accountLock.withLock { withContext(Dispatchers.IO) { account.signIn(idToken, nickname) } }
+                val outcome = accountLock.withLock { withContext(io) { account.signIn(idToken, nickname) } }
                 when (outcome) {
                     ChaparAccountService.SignInOutcome.Done -> {
                         diagnostics.record(ChaparEvent.SIGNED_IN)
@@ -304,7 +345,7 @@ class ChaparViewModel(
                 connectJob?.cancel()
                 stopIfHoldingTunnel()
                 accountLock.withLock {
-                    withContext(Dispatchers.IO) {
+                    withContext(io) {
                         account.signOut()
                         diagnostics.clear() // nothing about the account's use stays on the phone
                     }
@@ -321,16 +362,16 @@ class ChaparViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(busy = true) }
             try {
-                val error = accountLock.withLock { withContext(Dispatchers.IO) { account.deleteAccount() } }
+                val error = accountLock.withLock { withContext(io) { account.deleteAccount() } }
                 if (error == null) {
-                    withContext(Dispatchers.IO) { diagnostics.clear() } // nothing about a deleted account stays on the phone
+                    withContext(io) { diagnostics.clear() } // nothing about a deleted account stays on the phone
                     connectJob?.cancel()
                     stopIfHoldingTunnel()
                     _uiState.update { it.copy(account = AccountState.SignedOut, accountError = null) }
-                    toastSuccess(R.string.chapar_account_deleted)
+                    platform.showSuccess(R.string.chapar_account_deleted)
                     reloadProfiles()
                 } else {
-                    toastError(R.string.chapar_delete_failed)
+                    platform.showError(R.string.chapar_delete_failed)
                 }
             } finally {
                 _uiState.update { it.copy(busy = false) }
@@ -341,7 +382,7 @@ class ChaparViewModel(
     private fun stopIfHoldingTunnel() {
         if (_uiState.value.mayHoldTunnel) {
             watchdog?.cancel()
-            LauncherManager.stopService(app)
+            platform.stopVpn()
             _uiState.update { it.copy(connection = ConnectionState.Disconnected) }
         }
     }
@@ -349,6 +390,8 @@ class ChaparViewModel(
     /** Called by the activity right before it asks the service to start. */
     fun onStartRequested() {
         _uiState.update { it.copy(connection = ConnectionState.Connecting) }
+        startSent = true
+        startWatchdog()
     }
 
     /** The start request never reached the service (no profile, permission refused, start not allowed). */
@@ -356,6 +399,7 @@ class ChaparViewModel(
         watchdog?.cancel()
         diagnostics.record(ChaparEvent.START_REFUSED)
         _uiState.update { it.copy(connection = ConnectionState.Disconnected) }
+        platform.showError(R.string.chapar_start_refused)
     }
 
     private fun recordConnectionChange(before: ConnectionState, after: ConnectionState, mode: ChaparMode) {
@@ -379,7 +423,7 @@ class ChaparViewModel(
                 "Chapar ${BuildConfig.VERSION_NAME}",
                 "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
                 "Account: ${(state.account as? AccountState.SignedIn)?.nickname ?: "signed out"}",
-                "Mode: ${if (state.selectedMode == ChaparMode.TOR) "Tor" else "Iran"}",
+                "Mode: ${state.selectedMode.label}",
                 "Now: " + when (state.connection) {
                     ConnectionState.Connected -> "connected"
                     ConnectionState.Connecting -> "connecting"
@@ -388,7 +432,7 @@ class ChaparViewModel(
                     is ConnectionState.Failed -> "start failed"
                 },
             )
-            val text = withContext(Dispatchers.IO) { diagnostics.report(header) }
+            val text = withContext(io) { diagnostics.report(header) }
             _uiState.update { it.copy(report = text) }
         }
     }
@@ -400,6 +444,7 @@ class ChaparViewModel(
     /**
      * Selects [mode]. Before the first Connect it is only remembered. While connected, the core switches to
      * the new profile in place: the VPN interface stays up, so apps never use the real network (D-047).
+     * If the daemon cannot switch, it reports a failure or "not running", which the screen then shows.
      */
     fun selectMode(mode: ChaparMode) {
         viewModelScope.launch {
@@ -409,18 +454,18 @@ class ChaparViewModel(
             }
             val guid = ChaparModes.switchTarget(_uiState.value, mode) ?: return@launch
             try {
-                withContext(Dispatchers.IO) { repository.select(guid) }
+                withContext(io) { repository.select(guid) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.TAG, "Chapar: storing the selected mode failed", e)
-                toastError(R.string.toast_failure)
+                platform.showError(R.string.toast_failure)
                 return@launch
             }
             _uiState.update { it.copy(selectedGuid = guid) }
             if (_uiState.value.connection == ConnectionState.Connected) {
                 diagnostics.record(ChaparEvent.MODE_SWITCHED, mode)
-                LauncherManager.reloadService(app)
+                platform.reloadVpn()
             }
         }
     }
@@ -430,7 +475,7 @@ class ChaparViewModel(
     fun openBypass() {
         _uiState.update { it.copy(bypass = BypassState(loading = true)) }
         viewModelScope.launch {
-            val (apps, selected) = withContext(Dispatchers.IO) { installedApps() to bypass.selected() }
+            val (apps, selected) = withContext(io) { installedApps() to bypass.selected() }
             _uiState.update { state ->
                 state.bypass?.let { state.copy(bypass = it.copy(apps = apps, selected = selected, loading = false)) } ?: state
             }
@@ -451,14 +496,25 @@ class ChaparViewModel(
         val current = _uiState.value.bypass ?: return
         viewModelScope.launch {
             val chosen = ChaparBypass.cleaned(current.selected, current.apps)
-            val changed = withContext(Dispatchers.IO) {
+            val changed = withContext(io) {
                 val before = bypass.selected()
                 bypass.save(chosen)
                 before != chosen
             }
             _uiState.update { it.copy(bypass = null) }
-            // The list is applied when the VPN interface is built, so a running connection must be reconnected.
-            if (changed && _uiState.value.connection == ConnectionState.Connected) toastSuccess(R.string.chapar_bypass_reconnect)
+            // The list is applied when the VPN interface is built. A running connection is restarted at once:
+            // an app taken off the list must not keep using the real address until the next Connect.
+            if (changed && _uiState.value.connection == ConnectionState.Connected) {
+                diagnostics.record(ChaparEvent.BYPASS_APPLIED)
+                _uiState.update { it.copy(connection = ConnectionState.Connecting) }
+                startWatchdog()
+                platform.restartVpn {
+                    viewModelScope.launch {
+                        watchdog?.cancel()
+                        _uiState.update { it.copy(connection = ConnectionState.Disconnected) }
+                    }
+                }
+            }
         }
     }
 
@@ -467,7 +523,7 @@ class ChaparViewModel(
     }
 
     override fun onCleared() {
-        events.close()
+        platform.close()
         super.onCleared()
     }
 
@@ -484,8 +540,7 @@ class ChaparViewModel(
                 ChaparLinks.hostOf(BuildConfig.CHAPAR_API_URL),
             )
             return ChaparViewModel(
-                application,
-                MainRepository(application as AngApplication),
+                AndroidChaparPlatform(application as AngApplication),
                 repository,
                 service,
                 ChaparDiagnostics(),
@@ -496,7 +551,7 @@ class ChaparViewModel(
     }
 
     companion object {
-        private const val WATCHDOG_MS = 45_000L
+        internal const val WATCHDOG_MS = 45_000L
 
         /** Apps with a launcher icon (visible through the manifest's <queries>), Chapar itself excluded. */
         fun launchableApps(application: Application): List<InstalledApp> {

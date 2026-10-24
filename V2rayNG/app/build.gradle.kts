@@ -62,13 +62,10 @@ android {
         }
     }
 
+    // Chapar: one distribution. Upstream's "fdroid" flavor is gone: sign-in needs Google Play services, so a
+    // Chapar build without them cannot work. The flavor stays so task names match upstream's Play Store tasks.
     flavorDimensions.add("distribution")
     productFlavors {
-        create("fdroid") {
-            dimension = "distribution"
-            applicationIdSuffix = ".fdroid"
-            buildConfigField("String", "DISTRIBUTION", "\"F-Droid\"")
-        }
         create("playstore") {
             dimension = "distribution"
             buildConfigField("String", "DISTRIBUTION", "\"Play Store\"")
@@ -95,46 +92,25 @@ android {
 
     applicationVariants.all {
         val variant = this
-        val isFdroid = variant.productFlavors.any { it.name == "fdroid" }
-        if (isFdroid) {
-            val versionCodes =
-                mapOf(
-                    "armeabi-v7a" to 2, "arm64-v8a" to 1, "x86" to 4, "x86_64" to 3, "universal" to 0
-                )
+        val versionCodes =
+            mapOf("armeabi-v7a" to 4, "arm64-v8a" to 4, "x86" to 4, "x86_64" to 4, "universal" to 4)
 
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI") ?: "universal"
-                    output.outputFileName = "Chapar_${variant.versionName}-fdroid_${abi}.apk"
-                    if (versionCodes.containsKey(abi)) {
-                        output.versionCodeOverride =
-                            (100 * variant.versionCode + versionCodes[abi]!!).plus(5000000)
-                    } else {
-                        return@forEach
-                    }
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
+            .forEach { output ->
+                val abi = if (output.getFilter("ABI") != null)
+                    output.getFilter("ABI")
+                else
+                    "universal"
+
+                output.outputFileName = "Chapar_${variant.versionName}_${abi}.apk"
+                if (versionCodes.containsKey(abi)) {
+                    output.versionCodeOverride =
+                        (1000000 * versionCodes[abi]!!).plus(variant.versionCode)
+                } else {
+                    return@forEach
                 }
-        } else {
-            val versionCodes =
-                mapOf("armeabi-v7a" to 4, "arm64-v8a" to 4, "x86" to 4, "x86_64" to 4, "universal" to 4)
-
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
-                .forEach { output ->
-                    val abi = if (output.getFilter("ABI") != null)
-                        output.getFilter("ABI")
-                    else
-                        "universal"
-
-                    output.outputFileName = "Chapar_${variant.versionName}_${abi}.apk"
-                    if (versionCodes.containsKey(abi)) {
-                        output.versionCodeOverride =
-                            (1000000 * versionCodes[abi]!!).plus(variant.versionCode)
-                    } else {
-                        return@forEach
-                    }
-                }
-        }
+            }
     }
 
     buildFeatures {
@@ -167,6 +143,18 @@ android {
     }
 
 }
+
+// Chapar: a release without the API address or the client ID builds fine but can never sign in or connect.
+// Debug builds and unit tests still run without the file.
+val chaparApiUrl: String = chaparProps.getProperty("CHAPAR_API_URL", "")
+val chaparClientId: String = chaparProps.getProperty("CHAPAR_WEB_CLIENT_ID", "")
+val checkChaparProperties by tasks.registering {
+    doLast {
+        check(chaparApiUrl.startsWith("https://")) { "CHAPAR_API_URL in chapar.local.properties must be an https:// address" }
+        check(chaparClientId.isNotBlank()) { "CHAPAR_WEB_CLIENT_ID in chapar.local.properties is missing" }
+    }
+}
+tasks.matching { it.name == "prePlaystoreReleaseBuild" }.configureEach { dependsOn(checkChaparProperties) }
 
 dependencies {
     // Core Libraries
@@ -230,5 +218,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.kotlinx.coroutines.test)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 }

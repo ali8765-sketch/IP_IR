@@ -8,7 +8,7 @@ import com.v2ray.ang.dto.entities.RulesetItem
  * run as JVM tests). Upstream stores a China-oriented preset (`custom_routing_white`: geosite:cn
  * and geoip:cn direct, domestic DNS direct) at first start; that sends some traffic out from the
  * phone's real address even in Tor mode. Chapar sends everything through the proxy and keeps only
- * local network addresses direct.
+ * local network addresses direct. ChaparRoutingTest checks the shipped preset against these rules.
  */
 object ChaparRouting {
 

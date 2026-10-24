@@ -11,6 +11,9 @@ import java.security.SecureRandom
  * address of an authenticated UDP ASSOCIATE (127.0.0.1, shared by every app), not by password; those
  * packets still leave through the same VPN. Never log these values; the tunnel's config file holding
  * them is deleted right after it starts (TProxyService).
+ *
+ * A session lives in the memory of one process: only the daemon's services create and read it (CoreVpnService,
+ * CoreProxyOnlyService, CoreRootService). The core binds the port before the tunnel connects to it.
  */
 class SocksSession(val port: Int, val username: String, val password: String) {
 

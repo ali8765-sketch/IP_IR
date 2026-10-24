@@ -101,7 +101,8 @@ object LauncherManager {
             error(context.getString(R.string.toast_config_file_invalid))
         }
 
-        SettingsManager.refreshRuntimeSocksPort()
+        // Chapar: no SOCKS session here. This runs in the UI process, but the session is per process and each
+        // service makes its own in the daemon when it starts (CoreVpnService.onStartCommand).
 
         if (config.insecure == true && config.pinnedCA256.isNullOrEmpty()) {
             context.toastError(R.string.toast_allow_insecure_deprecated)

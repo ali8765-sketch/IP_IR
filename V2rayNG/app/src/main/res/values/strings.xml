@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Chapar</string>
-    <string name="app_widget_name">Switch</string>
-    <string name="app_tile_name">Switch</string>
+    <!-- Chapar: the tile and widget only stop the VPN or open Chapar (a start needs Connect), so not "Switch". -->
+    <string name="app_widget_name">Chapar</string>
+    <string name="app_tile_name">Chapar</string>
     <string name="app_tile_first_use">Open Chapar and tap Connect first.</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

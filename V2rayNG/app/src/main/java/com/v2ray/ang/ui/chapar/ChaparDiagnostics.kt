@@ -8,7 +8,8 @@ import java.time.format.DateTimeFormatter
 /**
  * The events the "Report a problem" screen can show. Every line is one of these fixed texts plus,
  * at most, a mode or an [AccountError] name, so a report can never contain a key, a server
- * address, a link, a site the user visited, or a message from the core (SECURITY.md).
+ * address, a link, a site the user visited, or a message from the core. The report's header adds the
+ * app and Android version, the nickname, the mode, and the connection state (ChaparViewModel.openReport).
  */
 enum class ChaparEvent(val text: String) {
     SIGNED_IN("Signed in"),
@@ -24,6 +25,8 @@ enum class ChaparEvent(val text: String) {
     DISCONNECTED("Disconnected"),
     START_FAILED("Connection failed to start"),
     MODE_SWITCHED("Switched mode while connected"),
+    MODE_MISSING("Not started: the server sent no link for this mode"),
+    BYPASS_APPLIED("Reconnected to apply the apps that skip the VPN"),
     SERVER_UNREACHABLE("Could not reach the Chapar server"),
     OVER_QUOTA("Account: data used up"),
     DISABLED("Account: turned off"),
@@ -79,6 +82,5 @@ class ChaparDiagnostics(
         const val MAX_LINES = 100
         private const val SEPARATOR = "  "
         private val TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC)
-        private val ChaparMode.label get() = if (this == ChaparMode.TOR) "Tor" else "Iran"
     }
 }

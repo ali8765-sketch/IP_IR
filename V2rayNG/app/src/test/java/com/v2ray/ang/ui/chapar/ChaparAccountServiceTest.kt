@@ -71,8 +71,9 @@ class ChaparAccountServiceTest {
     private val service = ChaparAccountService(ChaparApi("https://api.example.com", backend.client), session, repository, "api.example.com")
 
     private val me = """{"nickname":"sunrise_42","status":"active","used_bytes":0,"quota_bytes":10737418240,"resets_at":"2026-11-01T00:00:00+00:00"}"""
+    private val query = "encryption=none&flow=xtls-rprx-vision&security=reality&sni=www.example.org&fp=chrome&pbk=PUB&sid=ab12&type=tcp"
     private fun profiles(key: String, host: String = "api.example.com") =
-        "vless://$key@$host:8443?x#Chapar-Iran\nvless://$key@$host:8444?x#Chapar-Tor"
+        "vless://$key@$host:8443?$query#Chapar-Iran\nvless://$key@$host:8444?$query#Chapar-Tor"
 
     private fun signedInBackend(key: String = "k1") {
         backend.routes["GET" to "/api/v1/me"] = 200 to me
@@ -107,6 +108,29 @@ class ChaparAccountServiceTest {
         val outcome = service.refresh() as ChaparAccountService.RefreshOutcome.SignedIn
         assertEquals("active", outcome.info?.status)
         assertTrue(backend.requests.none { it.contains("/connect") })
+        assertTrue(repository.profiles().isEmpty())
+    }
+
+    @Test
+    fun aMalformedAccountAnswerIsAnErrorNotACrash() {
+        session.save("sess", "sunrise_42")
+        for (body in listOf(
+            me.replace("\"used_bytes\":0", "\"used_bytes\":\"n/a\""),
+            me.replace("\"quota_bytes\":10737418240", "\"quota_bytes\":true"),
+            me.replace("\"used_bytes\":0,", ""),
+        )) {
+            backend.routes["GET" to "/api/v1/me"] = 200 to body
+            val outcome = service.refresh() as ChaparAccountService.RefreshOutcome.SignedIn
+            assertNull(outcome.info, body) // shown like "server not reachable"; the session stays
+            assertEquals("sess", session.token)
+        }
+    }
+
+    @Test
+    fun anOversizedAnswerIsRefused() {
+        session.save("sess", "sunrise_42")
+        backend.routes["POST" to "/api/v1/connect"] = 200 to profiles("k1") + "\n" + "x".repeat(70_000)
+        assertEquals(ChaparAccountService.ConnectOutcome.Failed(AccountError.FAILED), service.connect())
         assertTrue(repository.profiles().isEmpty())
     }
 
@@ -229,10 +253,12 @@ class ChaparAccountServiceTest {
             "<html>captive portal</html>",
             """{"outbounds": []}""",
             profiles("k2") + "\nhttps://evil.example/sub",
+            profiles("k2").replace("security=reality", "security=none"),
+            profiles("k2").replace("type=tcp", "type=tcp&allowInsecure=1"),
             "",
         )) {
             backend.routes["POST" to "/api/v1/connect"] = 200 to answer
-            assertEquals(ChaparAccountService.ConnectOutcome.Failed(AccountError.FAILED), service.connect(), answer)
+            assertEquals(ChaparAccountService.ConnectOutcome.Failed(AccountError.LINK_REFUSED), service.connect(), answer)
         }
         assertEquals(listOf("k1"), importedKeys) // nothing else was ever handed to the importer
         assertEquals(2, repository.profiles().size)

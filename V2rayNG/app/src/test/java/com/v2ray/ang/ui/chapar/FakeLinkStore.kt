@@ -13,8 +13,10 @@ internal class FakeLinkStore : LinkStore {
 
     fun addServer(sub: String, remarks: String) = newId("s").also { servers[it] = sub to remarks }
 
+    var compactions = 0
+
     override fun serverIds() = servers.keys.toList()
-    override fun serverIdsOf(subscriptionId: String) = servers.filterValues { it.first == subscriptionId }.keys.toList()
+    fun serverIdsOf(subscriptionId: String) = servers.filterValues { it.first == subscriptionId }.keys.toList()
     override fun remarksOf(serverId: String) = servers[serverId]?.second
     override fun subscriptions() = subs.map { StoredSubscription(it.key, it.value) }
     /** A subscription stored by an older version of the app (Connect used to allow them). */
@@ -31,7 +33,13 @@ internal class FakeLinkStore : LinkStore {
         serverIdsOf(subscriptionId).forEach { servers.remove(it) }
     }
 
-    override fun removeServer(serverId: String) { servers.remove(serverId) }
+    // Like MmkvManager.removeServer: removing the selected profile clears the selection.
+    override fun removeServer(serverId: String) {
+        servers.remove(serverId)
+        if (selected == serverId) selected = null
+    }
+
+    override fun compact() { compactions++ }
     override fun selectedServer() = selected
     override fun selectServer(serverId: String) { selected = serverId }
 

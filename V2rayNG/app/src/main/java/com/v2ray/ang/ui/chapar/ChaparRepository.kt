@@ -13,7 +13,6 @@ data class StoredSubscription(val id: String, val url: String)
  */
 interface LinkStore {
     fun serverIds(): List<String>
-    fun serverIdsOf(subscriptionId: String): List<String>
     fun remarksOf(serverId: String): String?
     fun subscriptions(): List<StoredSubscription>
 
@@ -23,6 +22,12 @@ interface LinkStore {
     /** Removes a subscription record together with its profiles. */
     fun removeSubscription(subscriptionId: String)
     fun removeServer(serverId: String)
+
+    /**
+     * Rewrites the profile storage without the removed profiles. Removing a profile only appends a delete
+     * record, and the old key stays readable in the file until the storage compacts itself.
+     */
+    fun compact()
 
     fun selectedServer(): String?
     fun selectServer(serverId: String)
@@ -63,10 +68,11 @@ class ChaparRepository(
         return true
     }
 
-    /** Removes every stored profile and subscription, e.g. after sign-out (D-042). */
+    /** Removes every stored profile and subscription, e.g. after sign-out (D-042), and the bytes of their keys. */
     fun clearAll() {
         store.subscriptions().filter { it.url.isNotBlank() }.forEach { store.removeSubscription(it.id) }
         store.serverIds().forEach { store.removeServer(it) }
+        store.compact()
     }
 }
 
@@ -74,8 +80,6 @@ class ChaparRepository(
 class MmkvLinkStore : LinkStore {
 
     override fun serverIds(): List<String> = MmkvManager.decodeAllServerList()
-
-    override fun serverIdsOf(subscriptionId: String): List<String> = MmkvManager.decodeServerList(subscriptionId)
 
     override fun remarksOf(serverId: String): String? = MmkvManager.decodeServerConfig(serverId)?.remarks
 
@@ -87,6 +91,12 @@ class MmkvLinkStore : LinkStore {
     override fun removeSubscription(subscriptionId: String) = MmkvManager.removeSubscription(subscriptionId)
 
     override fun removeServer(serverId: String) = MmkvManager.removeServer(serverId)
+
+    // Chapar keeps only its own profiles, so after removing them every profile store is empty; clearing
+    // them truncates the files (MMKV clearAll), which a plain remove does not.
+    override fun compact() {
+        MmkvManager.removeAllServer()
+    }
 
     override fun selectedServer(): String? = MmkvManager.getSelectServer()
 

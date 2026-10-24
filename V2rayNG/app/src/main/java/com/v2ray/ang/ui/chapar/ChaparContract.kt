@@ -7,7 +7,13 @@ package com.v2ray.ang.ui.chapar
  * leaves from the main server.
  * TOR: everything goes through Tor.
  */
-enum class ChaparMode { IRAN, TOR }
+enum class ChaparMode(
+    /** The English name used in the "Report a problem" text, which is never translated. */
+    val label: String,
+) {
+    IRAN("Iran"),
+    TOR("Tor"),
+}
 
 /** A stored profile, reduced to what the Chapar screen needs. */
 data class ChaparProfile(val guid: String, val remarks: String)

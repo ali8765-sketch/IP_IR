@@ -32,7 +32,8 @@ import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.core.LauncherManager
 import com.v2ray.ang.enums.PermissionType
 import com.v2ray.ang.handler.SettingsManager
-import com.v2ray.ang.ui.base.HelperBaseComponentActivity
+import com.v2ray.ang.helper.PermissionHelper
+import com.v2ray.ang.ui.base.BaseComponentActivity
 import com.v2ray.ang.R
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.util.LogUtil
@@ -43,9 +44,13 @@ import kotlinx.coroutines.launch
  * Chapar's launcher screen: Google sign-in, then one big button and two modes (D-038, D-041, D-042).
  * Starting and stopping goes through upstream's [LauncherManager], like v2rayNG's own main screen.
  */
-class ChaparActivity : HelperBaseComponentActivity() {
+class ChaparActivity : BaseComponentActivity() {
 
     private val viewModel: ChaparViewModel by viewModels { ChaparViewModel.Factory(application) }
+
+    // Only the notification permission is needed; upstream's helper activity also brings a QR scanner and file
+    // pickers. Created with the activity, because it registers for an activity result.
+    private val permissions = PermissionHelper(this)
 
     private val requestVpnPermission =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -54,7 +59,7 @@ class ChaparActivity : HelperBaseComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
+        permissions.request(PermissionType.POST_NOTIFICATIONS) {}
         // The ViewModel gets the key; the activity only does the parts that need an Activity.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

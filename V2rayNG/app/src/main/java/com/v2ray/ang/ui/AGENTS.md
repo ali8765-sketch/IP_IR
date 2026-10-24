@@ -21,7 +21,8 @@ guides; apply the precedence rule defined by the root guide.
   and an uncommitted input value owned solely by the visible component. A composable
   must not perform repository, MMKV, import/export, routing, or native-core work.
 - Send user operations through the owning feature's action/event contract and
-  ViewModel. Main-screen operations must use `MainAction` and `MainViewModel`.
+  ViewModel. Main-screen operations must use `MainAction` and `MainViewModel`. In Chapar the launcher
+  screen is `ui/chapar/ChaparActivity`; its operations use `ChaparAction` and `ChaparViewModel`.
   Composables must not mutate a repository, `MmkvManager`, or `SettingsManager`
   directly.
 - Use server GUIDs and group IDs for Compose keys, selection, saved state, and action

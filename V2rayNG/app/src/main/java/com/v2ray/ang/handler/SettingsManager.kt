@@ -53,14 +53,15 @@ object SettingsManager {
     private fun initRoutingRulesets(context: Context) {
         val exist = MmkvManager.decodeRoutingRulesets()
         if (exist.isNullOrEmpty()) {
-            // Chapar: the first-run preset sends everything through the proxy (see ChaparRouting).
-            val rulesetList = getPresetRoutingRulesets(context, RoutingType.CHAPAR)
+            // Chapar: migrateChaparDefaults, which runs right after this, replaces these rules on every install.
+            val rulesetList = getPresetRoutingRulesets(context)
             MmkvManager.encodeRoutingRulesets(rulesetList)
         }
     }
 
     /**
-     * Chapar: moves an install to the Chapar routing preset once. Upstream's first-run preset
+     * Chapar: the only place that stores the Chapar routing preset, on a new install and on an
+     * update from an older build. Upstream's first-run preset
      * (geosite:cn and geoip:cn direct) lets some traffic leave from the real address, so rules stored by
      * an older build are replaced, as is the domestic DNS default. A stored marker makes this run once
      * per [ChaparRouting.VERSION]; it is written only after the new rules are stored.
