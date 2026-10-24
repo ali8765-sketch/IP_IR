@@ -1,8 +1,35 @@
 # Chapar for Android
 
-Chapar is a free VPN for Iranians who live outside Iran. This repository is the complete source code of the
-Android app, published so that anyone can check what the app does, build it themselves, and compare it with
-the APK we publish.
+**Download:** [latest version](https://github.com/ali8765-sketch/IP_IR/releases/latest)
+
+<div dir="rtl">
+
+## چاپار به زبان ساده
+
+چاپار یک اپ اندروید رایگان برای **ایرانیانی است که خارج از ایران زندگی می‌کنند**.
+
+خیلی از سایت‌ها و خدمات ایرانی، مثل بانک‌ها، سامانه‌های دولتی، فروشگاه‌ها و درگاه‌های پرداخت، کسی را که از خارج وصل می‌شود راه نمی‌دهند. با روشن کردن چاپار، سایت‌های ایرانی شما را با **آی‌پی ایران** می‌بینند، انگار داخل ایران هستید.
+
+- ثبت‌نام رایگان است و فقط با حساب Gmail انجام می‌شود.
+- هر حساب هر ماه حجم رایگان دارد و اپ مصرف شما را نشان می‌دهد.
+- سایت‌های غیرایرانی از سرور ما در اروپا باز می‌شوند.
+- حالت Tor برای حریم خصوصی بیشتر اختیاری است.
+- ممکن است چند سایت یا درگاه پرداخت ایرانی آی‌پی سرور ما را قبول نکنند.
+- چاپار برای استفاده از داخل ایران ساخته نشده است.
+
+**دانلود:** [آخرین نسخه](https://github.com/ali8765-sketch/IP_IR/releases/latest)
+
+</div>
+
+## In short
+
+Chapar is a free Android VPN for Iranians who live outside Iran. Its main purpose: Iranian websites and services
+that refuse visitors from abroad (banks, government services, shops, payment gateways) see an **Iranian IP
+address**, as if you were in Iran. Other websites are reached through our server in Europe. It is not meant for
+use inside Iran, and a few Iranian sites or payment gateways may still refuse our server's address.
+
+This repository is the complete source code of the Android app, published so that anyone can check what the
+app does, build it themselves, and compare it with the APK we publish.
 
 The app is a fork of [v2rayNG](https://github.com/2dust/v2rayNG) 2.3.11 by 2dust and its contributors, and is
 licensed under the **GPL-3.0**, like v2rayNG (see [LICENSE](LICENSE)). The servers are run by us and their code
