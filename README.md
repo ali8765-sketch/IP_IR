@@ -8,6 +8,8 @@
 
 چاپار یک اپ اندروید رایگان برای **ایرانیانی است که خارج از ایران زندگی می‌کنند**.
 
+**چاپار صرفاً یک VPN معمولی نیست.** VPNهای معمولی آی‌پی خارجی می‌دهند تا از فیلترینگ رد شوید. چاپار برعکس کار می‌کند: به ایرانیانِ خارج از کشور **آی‌پی ایران** می‌دهد تا بتوانند از خدمات داخل ایران استفاده کنند.
+
 خیلی از سایت‌ها و خدمات ایرانی، مثل بانک‌ها، سامانه‌های دولتی، فروشگاه‌ها و درگاه‌های پرداخت، کسی را که از خارج وصل می‌شود راه نمی‌دهند. با روشن کردن چاپار، سایت‌های ایرانی شما را با **آی‌پی ایران** می‌بینند، انگار داخل ایران هستید.
 
 - ثبت‌نام رایگان است و فقط با حساب Gmail انجام می‌شود.
@@ -23,7 +25,8 @@
 
 ## In short
 
-Chapar is a free Android VPN for Iranians who live outside Iran. Its main purpose: Iranian websites and services
+Chapar is a free Android app for Iranians who live outside Iran, and **not just another VPN**. Ordinary VPNs give
+you a foreign IP address to get around filtering; Chapar does the opposite. Its main purpose: Iranian websites and services
 that refuse visitors from abroad (banks, government services, shops, payment gateways) see an **Iranian IP
 address**, as if you were in Iran. Other websites are reached through our server in Europe. It is not meant for
 use inside Iran, and a few Iranian sites or payment gateways may still refuse our server's address.
