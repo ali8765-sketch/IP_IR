@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chapar screen in Persian (D-057). Same keys as values/strings_chapar.xml; plain words, never "VLESS", "config", or "server". -->
+<resources>
+    <string name="chapar_settings">تنظیمات</string>
+
+    <string name="chapar_status_disconnected">وصل نیست</string>
+    <string name="chapar_status_connecting">در حال اتصال…</string>
+    <string name="chapar_status_connected">وصل است</string>
+    <string name="chapar_status_disconnecting">در حال قطع اتصال…</string>
+    <string name="chapar_status_failed">اتصال برقرار نشد</string>
+    <string name="chapar_failed_hint">اتصال اینترنت خود را بررسی کنید و دوباره امتحان کنید.</string>
+
+    <string name="chapar_hint_connect">برای اتصال بزنید</string>
+    <string name="chapar_hint_disconnect">برای قطع اتصال بزنید</string>
+    <string name="chapar_hint_wait">لطفاً صبر کنید</string>
+    <string name="chapar_hint_cancel">برای لغو بزنید</string>
+    <string name="chapar_action_cancel">لغو اتصال</string>
+    <string name="chapar_action_connect">اتصال</string>
+    <string name="chapar_action_disconnect">قطع اتصال</string>
+
+    <string name="chapar_mode_label">حالت</string>
+    <string name="chapar_mode_iran">ایران</string>
+    <string name="chapar_mode_tor">Tor</string>
+    <string name="chapar_mode_iran_note">سریع و خصوصی. سایت‌های ایرانی آی‌پی ایران می‌بینند، چون از سرور ما در ایران باز می‌شوند. ممکن است چند سایت و درگاه پرداخت ایرانی هنوز سرور ما را قبول نکنند.</string>
+    <string name="chapar_mode_tor_note">کندتر است، اما سایت‌ها آی‌پی شما را نمی‌بینند. بعضی سایت‌ها Tor را می‌بندند. برنامه‌های دیگر گوشی هنوز می‌توانند دستگاه‌های شبکهٔ خانگی شما را پیدا کنند.</string>
+    <string name="chapar_mode_unavailable">فعلاً در دسترس نیست</string>
+    <string name="chapar_mode_missing">این حالت فعلاً در دسترس نیست. حالت دیگر را انتخاب کنید و دوباره امتحان کنید.</string>
+    <string name="chapar_start_refused">اندروید اجازه نداد چاپار VPN را روشن کند. درخواست VPN را تأیید کنید یا VPN همیشه‌روشنِ برنامهٔ دیگری را خاموش کنید و دوباره امتحان کنید.</string>
+
+    <string name="chapar_welcome_title">به چاپار خوش آمدید</string>
+    <string name="chapar_welcome_body">از سایت‌ها، اپ‌ها و خدمات ایرانی که از خارج از ایران کار نمی‌کنند استفاده کنید. رایگان، بدون تبلیغ و بدون دردسر.\nبرای اتصال با حساب Gmail خود وارد شوید.</string>
+    <string name="chapar_sign_in">ورود با گوگل</string>
+    <string name="chapar_privacy_note">ما فقط یک کد درهم‌شده از شناسهٔ گوگل شما، اسم مستعارتان و مقدار مصرفتان را نگه می‌داریم. ایمیل، آی‌پی و سایت‌هایی که باز می‌کنید هرگز ذخیره نمی‌شوند. گوگل می‌بیند که وارد شده‌اید و چاپار به Google Play services نیاز دارد. در حالت ایران، سایت‌های ایرانی (و نامشان) از سرور ما در ایران باز می‌شوند. در حالت Tor هم می‌بینیم که از Tor استفاده می‌کنید و چقدر داده مصرف می‌کنید. حسابتان را می‌توانید در تنظیمات حذف کنید.</string>
+
+    <string name="chapar_error_network">به چاپار دسترسی نداریم. اینترنت خود را بررسی کنید و دوباره امتحان کنید.</string>
+    <string name="chapar_error_gmail_only">فقط حساب‌های Gmail می‌توانند از چاپار استفاده کنند. یک حساب ‎@gmail.com انتخاب کنید.</string>
+    <string name="chapar_error_signup_closed">ثبت‌نام بسته است: همهٔ جاها پر شده.</string>
+    <string name="chapar_error_nickname_taken">این اسم مستعار گرفته شده. اسم دیگری امتحان کنید.</string>
+    <string name="chapar_error_invalid_nickname">از ۳ تا ۲۰ حرف انگلیسی، عدد یا _ استفاده کنید.</string>
+    <string name="chapar_connect_failed">چاپار نتوانست اتصال شما را آماده کند. کمی بعد دوباره امتحان کنید.</string>
+    <string name="chapar_error_failed">ورود انجام نشد. لطفاً دوباره امتحان کنید.</string>
+    <string name="chapar_error_rate_limited">در مدت کوتاهی خیلی زیاد امتحان کردید. یک دقیقه صبر کنید و دوباره امتحان کنید.</string>
+    <string name="chapar_error_server_busy">چاپار الان شلوغ است. کمی بعد دوباره امتحان کنید.</string>
+    <string name="chapar_error_insecure">امنیت اتصال به چاپار تأیید نشد. با یک شبکهٔ دیگر امتحان کنید.</string>
+
+    <string name="chapar_nickname_title">یک اسم مستعار انتخاب کنید</string>
+    <string name="chapar_nickname_body">از آن برای خوش‌آمدگویی استفاده می‌کنیم. اسم واقعی یا اسمی که دیگران در اینترنت با آن شما را می‌شناسند ننویسید.</string>
+    <string name="chapar_nickname_label">اسم مستعار</string>
+    <string name="chapar_nickname_hint">۳ تا ۲۰ کاراکتر: حرف انگلیسی، عدد و _</string>
+    <string name="chapar_continue">ادامه</string>
+    <string name="chapar_cancel">لغو</string>
+
+    <string name="chapar_usage_line">%1$s گیگ باقی مانده · تمدید در %2$s</string>
+    <string name="chapar_usage_over">حجم شما تمام شده. در %1$s دوباره برمی‌گردد.</string>
+    <string name="chapar_account_disabled">حساب شما غیرفعال شده و اتصالتان فعلاً کار نمی‌کند.</string>
+
+    <string name="chapar_signed_in_as">وارد شده با %1$s</string>
+    <string name="chapar_sign_out">خروج از حساب</string>
+    <string name="chapar_delete_account">حذف حساب</string>
+    <string name="chapar_delete_title">حسابتان حذف شود؟</string>
+    <string name="chapar_delete_body">این کار برگشت‌پذیر نیست. اتصالتان ظرف چند دقیقه قطع می‌شود و اسم مستعارتان پاک می‌شود. تا پایان ماه فقط یک کد درهم‌شده از شناسهٔ گوگل شما و مصرف این ماه را نگه می‌داریم، تا ثبت‌نام دوباره حجم شما را از نو شروع نکند.</string>
+    <string name="chapar_delete_confirm">حذف</string>
+    <string name="chapar_account_deleted">حساب شما حذف شد</string>
+    <string name="chapar_delete_failed">حذف حساب انجام نشد. دوباره امتحان کنید.</string>
+
+    <string name="chapar_report_problem">گزارش اتصال</string>
+    <string name="chapar_report_problem_note">ببینید چه اتفاقی افتاده و برای درخواست کمک آن را کپی کنید.</string>
+    <string name="chapar_report_title">گزارش اتصال</string>
+    <string name="chapar_report_body">این گزارش هیچ کلید، آدرس سرور یا سایتی که باز کرده‌اید ندارد. اگر کمک لازم دارید، آن را کپی کنید و برای ما بفرستید.</string>
+    <string name="chapar_report_copy">کپی</string>
+    <string name="chapar_report_close">بستن</string>
+    <string name="chapar_report_copied">گزارش کپی شد</string>
+
+    <string name="chapar_bypass_title">برنامه‌های بیرون از VPN</string>
+    <string name="chapar_bypass_note">برنامه‌هایی را انتخاب کنید که از اینترنت خود شما استفاده کنند.</string>
+    <string name="chapar_bypass_warning">برنامه‌هایی که اینجا انتخاب می‌کنید از اینترنت و آدرس واقعی شما استفاده می‌کنند و چاپار از آن‌ها محافظت نمی‌کند. اندروید این را روی هر برنامه‌ای هم که شناسهٔ کاربری‌اش با برنامهٔ انتخاب‌شده یکی است اعمال می‌کند (کم پیش می‌آید، بیشتر برنامه‌های سیستمی).</string>
+    <string name="chapar_bypass_search">جست‌وجوی برنامه‌ها</string>
+    <string name="chapar_bypass_on">بیرون از VPN</string>
+    <string name="chapar_bypass_off">از VPN استفاده می‌کند</string>
+    <string name="chapar_bypass_save">ذخیره</string>
+    <string name="chapar_always_on_title">جلوگیری از نشت</string>
+    <string name="chapar_always_on_note">در تنظیمات VPN اندروید، روی چرخ‌دندهٔ کنار چاپار بزنید و «Always-on VPN» و «Block connections without VPN» را روشن کنید. آن وقت اگر VPN قطع شود، آدرس واقعی شما هرگز استفاده نمی‌شود.</string>
+
+    <string name="chapar_feedback_title">ارسال پیام</string>
+    <string name="chapar_feedback_note">مشکلی را گزارش کنید، پیشنهاد بدهید یا هر چیزی به ما بگویید.</string>
+    <string name="chapar_feedback_kind_problem">مشکل</string>
+    <string name="chapar_feedback_kind_idea">پیشنهاد</string>
+    <string name="chapar_feedback_kind_other">سایر</string>
+    <string name="chapar_feedback_label">پیام شما</string>
+    <string name="chapar_feedback_counter">%1$d / %2$d</string>
+    <string name="chapar_feedback_attach">پیوست گزارش اتصال</string>
+    <string name="chapar_feedback_attach_note">فقط رویدادهای اتصال، هرگز سایت‌هایی که باز کرده‌اید.</string>
+    <string name="chapar_feedback_privacy">اسم مستعار شما همراه پیام دیده می‌شود. اطلاعات شخصی ننویسید. پیام‌ها بعد از ۳۰ روز پاک می‌شوند.</string>
+    <string name="chapar_feedback_send">ارسال</string>
+    <string name="chapar_feedback_sent">ممنون. پیام شما فرستاده شد.</string>
+    <string name="chapar_feedback_failed">پیام فرستاده نشد. دوباره امتحان کنید.</string>
+    <string name="chapar_error_feedback_limit">در هر روز حداکثر ۵ پیام می‌توانید بفرستید. فردا دوباره امتحان کنید.</string>
+    <string name="chapar_language_title">زبان</string>
+    <string name="chapar_language_system">زبان گوشی</string>
+
+    <string name="chapar_settings_about">درباره</string>
+    <string name="chapar_about_version">چاپار %1$s</string>
+    <string name="chapar_about_license">نرم‌افزار آزاد با مجوز GPL-3.0، ساخته‌شده بر پایهٔ v2rayNG، بدون هیچ ضمانتی. کد منبع عمومی است: github.com/ali8765-sketch/IP_IR</string>
+</resources>

@@ -87,6 +87,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.disabled
 import com.v2ray.ang.R
 
@@ -94,12 +97,14 @@ import com.v2ray.ang.R
 fun ChaparScreen(
     state: ChaparUiState,
     versionName: String,
+    language: ChaparLanguage,
     onAction: (ChaparAction) -> Unit,
 ) {
     val extras = LocalChaparColors.current
     val colors = MaterialTheme.colorScheme
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var chooseLanguage by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -133,8 +138,13 @@ fun ChaparScreen(
         SettingsSheet(
             nickname = (state.account as? AccountState.SignedIn)?.nickname.orEmpty(),
             versionName = versionName,
+            language = language,
             accountActionsEnabled = state.accountActionsEnabled,
             onDismiss = { showSettings = false },
+            onChooseLanguage = {
+                showSettings = false
+                chooseLanguage = true
+            },
             onAction = { action ->
                 showSettings = false
                 if (action == ChaparAction.DeleteAccount) confirmDelete = true else onAction(action)
@@ -144,6 +154,18 @@ fun ChaparScreen(
 
     state.report?.let { report -> ReportDialog(report, onAction) }
     state.bypass?.let { bypass -> BypassDialog(bypass, onAction) }
+    state.feedback?.let { feedback -> FeedbackDialog(feedback, onAction) }
+
+    if (chooseLanguage) {
+        LanguageDialog(
+            current = language,
+            onDismiss = { chooseLanguage = false },
+            onChoose = {
+                chooseLanguage = false
+                if (it != language) onAction(ChaparAction.SetLanguage(it))
+            },
+        )
+    }
 
     if (confirmDelete) {
         AlertDialog(
@@ -245,6 +267,138 @@ private fun BypassDialog(state: BypassState, onAction: (ChaparAction) -> Unit) {
     )
 }
 
+/** "Send a message" to the admin (D-056): a problem, an idea, or anything else. */
+@Composable
+private fun FeedbackDialog(state: FeedbackState, onAction: (ChaparAction) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onAction(ChaparAction.CloseFeedback) },
+        title = { Text(stringResource(R.string.chapar_feedback_title)) },
+        text = {
+            Column(
+                Modifier
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val kinds = FeedbackKind.entries
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    kinds.forEachIndexed { index, kind ->
+                        SegmentedButton(
+                            selected = kind == state.kind,
+                            onClick = { onAction(ChaparAction.SetFeedbackKind(kind)) },
+                            enabled = !state.sending,
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = kinds.size),
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (kind) {
+                                            FeedbackKind.PROBLEM -> R.string.chapar_feedback_kind_problem
+                                            FeedbackKind.IDEA -> R.string.chapar_feedback_kind_idea
+                                            FeedbackKind.OTHER -> R.string.chapar_feedback_kind_other
+                                        }
+                                    )
+                                )
+                            },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = state.text,
+                    onValueChange = { onAction(ChaparAction.SetFeedbackText(it)) },
+                    label = { Text(stringResource(R.string.chapar_feedback_label)) },
+                    supportingText = {
+                        Text(stringResource(R.string.chapar_feedback_counter, state.text.length, FeedbackState.MAX_TEXT))
+                    },
+                    enabled = !state.sending,
+                    minLines = 4,
+                    maxLines = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                val attachLabel = stringResource(R.string.chapar_feedback_attach)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .toggleable(value = state.attachReport, enabled = !state.sending, role = Role.Checkbox) {
+                            onAction(ChaparAction.SetFeedbackReport(it))
+                        },
+                ) {
+                    Checkbox(checked = state.attachReport, onCheckedChange = null, enabled = !state.sending)
+                    Spacer(Modifier.size(8.dp))
+                    Column {
+                        Text(attachLabel, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            stringResource(R.string.chapar_feedback_attach_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Text(
+                    stringResource(R.string.chapar_feedback_privacy),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            if (state.sending) {
+                CircularProgressIndicator(Modifier.size(24.dp))
+            } else {
+                TextButton(onClick = { onAction(ChaparAction.SendFeedback) }, enabled = state.canSend) {
+                    Text(stringResource(R.string.chapar_feedback_send))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onAction(ChaparAction.CloseFeedback) }, enabled = !state.sending) {
+                Text(stringResource(R.string.chapar_cancel))
+            }
+        },
+    )
+}
+
+/** The app's language (D-057): the phone's language, English, or Persian. Each name is shown in its own language. */
+@Composable
+private fun LanguageDialog(current: ChaparLanguage, onDismiss: () -> Unit, onChoose: (ChaparLanguage) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.chapar_language_title)) },
+        text = {
+            Column {
+                ChaparLanguage.entries.forEach { option ->
+                    val name = languageName(option)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(selected = option == current, role = Role.RadioButton) { onChoose(option) },
+                    ) {
+                        RadioButton(selected = option == current, onClick = null)
+                        Spacer(Modifier.size(8.dp))
+                        Text(name, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.chapar_cancel)) } },
+    )
+}
+
+@Composable
+private fun languageName(language: ChaparLanguage): String = stringResource(
+    when (language) {
+        ChaparLanguage.SYSTEM -> R.string.chapar_language_system
+        ChaparLanguage.ENGLISH -> R.string.chapar_language_en
+        ChaparLanguage.PERSIAN -> R.string.chapar_language_fa
+    }
+)
+
 @Composable
 private fun CenteredProgress() {
     Box(Modifier.fillMaxWidth().padding(top = 120.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -263,6 +417,7 @@ private fun accountErrorText(error: AccountError): String = stringResource(
         AccountError.SERVER_BUSY -> R.string.chapar_error_server_busy
         AccountError.INSECURE -> R.string.chapar_error_insecure
         AccountError.LINK_REFUSED -> R.string.chapar_connect_failed
+        AccountError.FEEDBACK_LIMIT -> R.string.chapar_error_feedback_limit
         AccountError.FAILED -> R.string.chapar_error_failed
     }
 )
@@ -489,11 +644,17 @@ private fun HomeContent(state: ChaparUiState, account: AccountState.SignedIn, on
         )
         account.info?.let { info ->
             Spacer(Modifier.height(24.dp))
+            // Digits and month names in the screen's language (Persian digits in Persian).
+            val locale = LocalConfiguration.current.locales[0]
             when (info.status) {
-                "over_quota" -> Notice(stringResource(R.string.chapar_usage_over, ChaparAccount.resetDay(info)))
+                "over_quota" -> Notice(stringResource(R.string.chapar_usage_over, ChaparAccount.resetDay(info, locale)))
                 "disabled" -> Notice(stringResource(R.string.chapar_account_disabled))
                 else -> Text(
-                    text = stringResource(R.string.chapar_usage_line, ChaparAccount.gigabytesLeft(info), ChaparAccount.resetDay(info)),
+                    text = stringResource(
+                        R.string.chapar_usage_line,
+                        ChaparAccount.gigabytesLeft(info, locale),
+                        ChaparAccount.resetDay(info, locale),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -594,8 +755,10 @@ private fun ModeSelector(
 private fun SettingsSheet(
     nickname: String,
     versionName: String,
+    language: ChaparLanguage,
     accountActionsEnabled: Boolean,
     onDismiss: () -> Unit,
+    onChooseLanguage: () -> Unit,
     onAction: (ChaparAction) -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
@@ -616,6 +779,12 @@ private fun SettingsSheet(
                 supportingContent = { Text(stringResource(R.string.chapar_always_on_note)) },
                 colors = itemColors,
                 modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenVpnSettings) },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.chapar_language_title)) },
+                supportingContent = { Text(languageName(language)) },
+                colors = itemColors,
+                modifier = Modifier.clickable(role = Role.Button, onClick = onChooseLanguage),
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             // Signing out or deleting waits while a connection is being set up or taken down.
@@ -640,6 +809,12 @@ private fun SettingsSheet(
                 supportingContent = { Text(stringResource(R.string.chapar_report_problem_note)) },
                 colors = itemColors,
                 modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenReport) },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.chapar_feedback_title)) },
+                supportingContent = { Text(stringResource(R.string.chapar_feedback_note)) },
+                colors = itemColors,
+                modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenFeedback) },
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             ListItem(

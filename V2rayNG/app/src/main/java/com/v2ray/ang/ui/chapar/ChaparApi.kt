@@ -86,6 +86,16 @@ class ChaparApi(
      */
     fun connect(token: String): String = execute(post("/api/v1/connect", "", token)) { it.limitedBody() }
 
+    /** A message to the admin (D-056): [kind] is FeedbackKind.code; [report] only if the user chose to attach it. */
+    fun sendFeedback(token: String, kind: String, message: String, report: String?) {
+        val body = JsonObject().apply {
+            addProperty("kind", kind)
+            addProperty("message", message)
+            if (report != null) addProperty("report", report)
+        }
+        execute(post("/api/v1/feedback", body.toString(), token)) { }
+    }
+
     fun logout(token: String) {
         execute(post("/api/v1/logout", "", token)) { }
     }

@@ -30,7 +30,9 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.core.LauncherManager
+import androidx.appcompat.app.AppCompatDelegate
 import com.v2ray.ang.enums.PermissionType
+import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.helper.PermissionHelper
 import com.v2ray.ang.ui.base.BaseComponentActivity
@@ -81,6 +83,7 @@ class ChaparActivity : BaseComponentActivity() {
             ChaparScreen(
                 state = state,
                 versionName = BuildConfig.VERSION_NAME,
+                language = currentLanguage(),
                 onAction = ::handleAction,
             )
         }
@@ -126,8 +129,20 @@ class ChaparActivity : BaseComponentActivity() {
             ChaparAction.SaveBypass -> viewModel.saveBypass()
             ChaparAction.CloseBypass -> viewModel.closeBypass()
             ChaparAction.OpenVpnSettings -> openVpnSettings()
+            ChaparAction.OpenFeedback -> viewModel.openFeedback()
+            is ChaparAction.SetFeedbackKind -> viewModel.setFeedbackKind(action.kind)
+            is ChaparAction.SetFeedbackText -> viewModel.setFeedbackText(action.text)
+            is ChaparAction.SetFeedbackReport -> viewModel.setFeedbackReport(action.attach)
+            ChaparAction.SendFeedback -> viewModel.sendFeedback()
+            ChaparAction.CloseFeedback -> viewModel.closeFeedback()
+            // AppCompat stores the choice and recreates this activity in the new language (D-057).
+            is ChaparAction.SetLanguage -> AppLocaleManager.setApplicationLanguage(action.language.code)
         }
     }
+
+    /** The language chosen in the app, or SYSTEM when it follows the phone. */
+    private fun currentLanguage(): ChaparLanguage =
+        ChaparLanguage.fromCode(AppCompatDelegate.getApplicationLocales().get(0)?.language)
 
     /** The report names the account and when Tor was used: mark it sensitive so Android hides it in clipboard previews. */
     private fun copySensitive(text: String) {

@@ -15,7 +15,8 @@ every change). The rest of this file is upstream's guide; where Chapar differs, 
   README's "Build it yourself" says; the core AAR also carries the geo files.
 - Never commit server addresses, domains, keys, the Google client ID, or `chapar.local.properties`. The app
   talks only to Google sign-in, Chapar's API, and Chapar's VPN server. No analytics, no destination logs.
-- The interface is English only (D-021). Decision codes in comments are explained in `DECISIONS.md`.
+- The interface is in English and Persian, with the same keys in `values/strings_chapar.xml` and
+  `values-fa/strings_chapar.xml` (D-057). Decision codes in comments are explained in `DECISIONS.md`.
 
 ## Scope and precedence
 

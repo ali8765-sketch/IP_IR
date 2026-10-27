@@ -79,9 +79,16 @@ class ChaparViewModelTest {
     private val routes = mutableMapOf(
         ("GET" to "/api/v1/me") to (200 to me),
         ("POST" to "/api/v1/connect") to (200 to bothModes),
+        ("POST" to "/api/v1/feedback") to (204 to ""),
     )
+
+    /** Bodies of the messages the fake backend received. */
+    private val sentFeedback = mutableListOf<String>()
     private val client = OkHttpClient.Builder().addInterceptor { chain ->
         val request = chain.request()
+        if (request.url.encodedPath == "/api/v1/feedback") {
+            sentFeedback += okio.Buffer().also { request.body!!.writeTo(it) }.readUtf8()
+        }
         val (code, text) = routes[request.method to request.url.encodedPath] ?: (404 to """{"error":"not_found"}""")
         Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(code).message("x")
             .body(text.toResponseBody("application/json".toMediaType())).build()
@@ -315,5 +322,112 @@ class ChaparViewModelTest {
         assertEquals(ConnectionState.Disconnected, state.connection)
         assertTrue(lastReportLine().endsWith("link_refused"), lastReportLine())
         assertEquals(listOf(R.string.chapar_connect_failed), platform.errors)
+    }
+
+    // ---- "Send a message" (D-056)
+
+    private fun TestScope.signedIn() {
+        vm.refresh()
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun aMessageIsSentAndTheDialogCloses() = runTest(dispatcher) {
+        signedIn()
+        vm.openFeedback()
+        vm.setFeedbackKind(FeedbackKind.IDEA)
+        vm.setFeedbackText("  یک پیشنهاد  ")
+        assertTrue(state.feedback!!.canSend)
+        vm.sendFeedback()
+        advanceUntilIdle()
+
+        assertNull(state.feedback)
+        assertEquals(listOf(R.string.chapar_feedback_sent), platform.successes)
+        val body = com.google.gson.JsonParser.parseString(sentFeedback.single()).asJsonObject
+        assertEquals("idea", body["kind"].asString)
+        assertEquals("یک پیشنهاد", body["message"].asString)
+        assertTrue(!body.has("report")) // only when the user ticks the box
+    }
+
+    @Test
+    fun theReportIsAttachedOnlyWhenChosen() = runTest(dispatcher) {
+        signedIn()
+        diagnosticsStore.lines = listOf("2026-10-27 10:00:00 UTC  Connected · Iran")
+        vm.openFeedback()
+        vm.setFeedbackText("help")
+        vm.setFeedbackReport(true)
+        vm.sendFeedback()
+        advanceUntilIdle()
+
+        val body = com.google.gson.JsonParser.parseString(sentFeedback.single()).asJsonObject
+        val report = body["report"].asString
+        assertTrue(report.startsWith("Chapar ") && report.endsWith("Connected · Iran"), report)
+    }
+
+    @Test
+    fun anEmptyMessageCannotBeSentAndTextIsCapped() = runTest(dispatcher) {
+        signedIn()
+        vm.openFeedback()
+        vm.setFeedbackText("   ")
+        vm.sendFeedback()
+        advanceUntilIdle()
+        assertTrue(sentFeedback.isEmpty())
+
+        vm.setFeedbackText("x".repeat(FeedbackState.MAX_TEXT + 50))
+        assertEquals(FeedbackState.MAX_TEXT, state.feedback!!.text.length)
+    }
+
+    @Test
+    fun theDailyLimitKeepsTheDialogOpenWithAMessage() = runTest(dispatcher) {
+        routes["POST" to "/api/v1/feedback"] = 429 to """{"error":"feedback_limit"}"""
+        signedIn()
+        vm.openFeedback()
+        vm.setFeedbackText("again")
+        vm.sendFeedback()
+        advanceUntilIdle()
+
+        assertEquals(FeedbackState(text = "again"), state.feedback) // kept, no longer sending
+        assertEquals(listOf(R.string.chapar_error_feedback_limit), platform.errors)
+    }
+
+    @Test
+    fun anEndedSessionSignsOutInsteadOfSending() = runTest(dispatcher) {
+        routes["POST" to "/api/v1/feedback"] = 401 to """{"error":"signed_out"}"""
+        signedIn()
+        vm.openFeedback()
+        vm.setFeedbackText("hi")
+        vm.sendFeedback()
+        advanceUntilIdle()
+
+        assertNull(state.feedback)
+        assertEquals(AccountState.SignedOut, state.account)
+    }
+
+    @Test
+    fun longReportsKeepTheirNewestWholeLines() {
+        val report = (1..200).joinToString("\n") { "line $it ".padEnd(40, '.') }
+        val trimmed = FeedbackState.trimReport(report, 400)
+        assertTrue(trimmed.length <= 400)
+        assertTrue(trimmed.startsWith("line ") && trimmed.endsWith(report.lines().last()))
+        assertEquals("short", FeedbackState.trimReport("short", 400))
+    }
+
+    @Test
+    fun usageIsFormattedInTheScreensLanguage() {
+        val info = AccountInfo("n", "active", 0, 5L * 1024 * 1024 * 1024, "2026-11-01T00:00:00+00:00")
+        assertEquals("5.0", ChaparAccount.gigabytesLeft(info))
+        assertEquals("1 Nov", ChaparAccount.resetDay(info))
+        val persian = java.util.Locale.forLanguageTag("fa")
+        assertEquals("۵٫۰", ChaparAccount.gigabytesLeft(info, persian))
+        assertTrue(ChaparAccount.resetDay(info, persian).startsWith("۱ "), ChaparAccount.resetDay(info, persian))
+    }
+
+    @Test
+    fun languagesMapToUpstreamCodes() {
+        assertEquals(ChaparLanguage.PERSIAN, ChaparLanguage.fromCode("fa"))
+        assertEquals(ChaparLanguage.ENGLISH, ChaparLanguage.fromCode("en"))
+        assertEquals(ChaparLanguage.SYSTEM, ChaparLanguage.fromCode(null))
+        assertEquals(ChaparLanguage.SYSTEM, ChaparLanguage.fromCode("de"))
+        assertEquals(AccountError.FEEDBACK_LIMIT, ChaparAccount.errorFor("feedback_limit"))
     }
 }

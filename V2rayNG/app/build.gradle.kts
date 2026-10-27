@@ -23,8 +23,8 @@ android {
         applicationId = "org.chapar.vpn"
         minSdk = 24
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         // Utils.isXray() read this from the upstream package name, which this fork changes.
         buildConfigField("boolean", "IS_XRAY", "true")
         buildConfigField("String", "CHAPAR_API_URL", "\"${chaparProps.getProperty("CHAPAR_API_URL", "")}\"")
@@ -120,9 +120,9 @@ android {
 
     androidResources {
         generateLocaleConfig = true
-        // Chapar: English only (D-021). Upstream's translations would mix other languages and the v2rayNG
-        // name into Chapar's toasts and notification on phones set to Persian or Arabic.
-        localeFilters += listOf("en")
+        // Chapar: English and Persian (D-057). Upstream's other translations would mix more languages and the
+        // v2rayNG name into Chapar's toasts and notification; the Persian file is checked for that.
+        localeFilters += listOf("en", "fa")
     }
 
     packaging {

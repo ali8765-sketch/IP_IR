@@ -415,26 +415,85 @@ class ChaparViewModel(
         }
     }
 
+    /** The first lines of a report: app, Android, account, mode, and connection now. Kept in English for the admin. */
+    private fun reportHeader(): List<String> {
+        val state = _uiState.value
+        return listOf(
+            "Chapar ${BuildConfig.VERSION_NAME}",
+            "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+            "Account: ${(state.account as? AccountState.SignedIn)?.nickname ?: "signed out"}",
+            "Mode: ${state.selectedMode.label}",
+            "Now: " + when (state.connection) {
+                ConnectionState.Connected -> "connected"
+                ConnectionState.Connecting -> "connecting"
+                ConnectionState.Disconnecting -> "disconnecting"
+                ConnectionState.Disconnected -> "not connected"
+                is ConnectionState.Failed -> "start failed"
+            },
+        )
+    }
+
     /** Opens the "Report a problem" dialog with the current report. */
     fun openReport() {
         viewModelScope.launch {
-            val state = _uiState.value
-            val header = listOf(
-                "Chapar ${BuildConfig.VERSION_NAME}",
-                "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
-                "Account: ${(state.account as? AccountState.SignedIn)?.nickname ?: "signed out"}",
-                "Mode: ${state.selectedMode.label}",
-                "Now: " + when (state.connection) {
-                    ConnectionState.Connected -> "connected"
-                    ConnectionState.Connecting -> "connecting"
-                    ConnectionState.Disconnecting -> "disconnecting"
-                    ConnectionState.Disconnected -> "not connected"
-                    is ConnectionState.Failed -> "start failed"
-                },
-            )
+            val header = reportHeader()
             val text = withContext(io) { diagnostics.report(header) }
             _uiState.update { it.copy(report = text) }
         }
+    }
+
+    // ---- "Send a message" to the admin (D-056)
+
+    fun openFeedback() {
+        _uiState.update { it.copy(feedback = FeedbackState()) }
+    }
+
+    fun setFeedbackKind(kind: FeedbackKind) = updateFeedback { it.copy(kind = kind) }
+
+    fun setFeedbackText(text: String) = updateFeedback { it.copy(text = text.take(FeedbackState.MAX_TEXT)) }
+
+    fun setFeedbackReport(attach: Boolean) = updateFeedback { it.copy(attachReport = attach) }
+
+    /** Closing is ignored while the message is being sent, so the result is never lost. */
+    fun closeFeedback() {
+        _uiState.update { if (it.feedback?.sending == true) it else it.copy(feedback = null) }
+    }
+
+    fun sendFeedback() {
+        val draft = _uiState.value.feedback ?: return
+        if (!draft.canSend) return
+        updateFeedback { it.copy(sending = true) }
+        viewModelScope.launch {
+            val report = if (draft.attachReport) {
+                val header = reportHeader()
+                withContext(io) { FeedbackState.trimReport(diagnostics.report(header)) }
+            } else {
+                null
+            }
+            val outcome = accountLock.withLock { withContext(io) { account.sendFeedback(draft.kind, draft.text.trim(), report) } }
+            when (outcome) {
+                ChaparAccountService.FeedbackOutcome.Sent -> {
+                    _uiState.update { it.copy(feedback = null) }
+                    platform.showSuccess(R.string.chapar_feedback_sent)
+                }
+
+                ChaparAccountService.FeedbackOutcome.SignedOut -> {
+                    diagnostics.record(ChaparEvent.SESSION_ENDED)
+                    stopIfHoldingTunnel()
+                    _uiState.update { it.copy(feedback = null, account = AccountState.SignedOut) }
+                    reloadProfiles()
+                }
+
+                is ChaparAccountService.FeedbackOutcome.Failed -> {
+                    updateFeedback { it.copy(sending = false) }
+                    platform.showError(feedbackErrorText(outcome.error))
+                }
+            }
+        }
+    }
+
+    private fun updateFeedback(change: (FeedbackState) -> FeedbackState) {
+        _uiState.update { state -> state.feedback?.let { state.copy(feedback = change(it)) } ?: state }
     }
 
     fun closeReport() {
@@ -570,6 +629,14 @@ class ChaparViewModel(
             AccountError.SERVER_BUSY -> R.string.chapar_error_server_busy
             AccountError.INSECURE -> R.string.chapar_error_insecure
             else -> R.string.chapar_connect_failed
+        }
+
+        fun feedbackErrorText(error: AccountError): Int = when (error) {
+            AccountError.FEEDBACK_LIMIT -> R.string.chapar_error_feedback_limit
+            AccountError.NETWORK -> R.string.chapar_error_network
+            AccountError.SERVER_BUSY -> R.string.chapar_error_server_busy
+            AccountError.INSECURE -> R.string.chapar_error_insecure
+            else -> R.string.chapar_feedback_failed
         }
     }
 }

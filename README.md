@@ -72,7 +72,7 @@ The app talks to three places. You can check each one in the code under
 | To | What | Where in the code |
 |---|---|---|
 | Google | Google sign-in on your phone (Android Credential Manager). | `ChaparActivity.kt` |
-| Our API (HTTPS only) | `POST /api/v1/auth/google`: the sign-in token from Google and your nickname. The server checks the token, uses the email address once to check it is a verified Gmail address, and stores only a hash of your Google account ID and your nickname. `GET /api/v1/me`: your account status and usage. `POST /api/v1/connect`: a fresh connection key every time you connect. `POST /api/v1/logout` and `DELETE /api/v1/me`: sign out and delete your account. | `ChaparApi.kt`, `ChaparRepository.kt` |
+| Our API (HTTPS only) | `POST /api/v1/auth/google`: the sign-in token from Google and your nickname. The server checks the token, uses the email address once to check it is a verified Gmail address, and stores only a hash of your Google account ID and your nickname. `GET /api/v1/me`: your account status and usage. `POST /api/v1/connect`: a fresh connection key every time you connect. `POST /api/v1/feedback`: only when you send a message from Settings, its text, its kind (problem, idea, other), and, only if you tick the box, the connection report. `POST /api/v1/logout` and `DELETE /api/v1/me`: sign out and delete your account. | `ChaparApi.kt`, `ChaparRepository.kt` |
 | Our VPN server | Your traffic, encrypted (VLESS + REALITY, TLS 1.3). | the Xray core |
 
 Name lookups (DNS), so you know who sees them:

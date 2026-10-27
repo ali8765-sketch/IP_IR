@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Chapar screen. English only (Chapar decision D-021). Plain words: never "VLESS", "config", or "server". -->
+<!-- Chapar screen, in English and Persian (values-fa; D-057). Plain words: never "VLESS", "config", or "server". -->
 <resources>
     <string name="chapar_settings">Settings</string>
 
@@ -22,14 +22,14 @@
     <string name="chapar_mode_iran">Iran</string>
     <string name="chapar_mode_tor">Tor</string>
     <!-- Iran mode since D-046: Iranian sites leave from our server in Iran. -->
-    <string name="chapar_mode_iran_note">Fast and private. Iranian sites see an Iranian address: they are reached through our server in Iran.</string>
+    <string name="chapar_mode_iran_note">Fast and private. Iranian sites see an Iranian address: they are reached through our server in Iran. A few Iranian sites and payment gateways may still refuse our server.</string>
     <string name="chapar_mode_tor_note">Slower, but websites can\'t see your IP. Some sites block Tor. Other apps on your phone can still find devices on your home network.</string>
     <string name="chapar_mode_unavailable">Not available right now</string>
     <string name="chapar_mode_missing">This mode is not available right now. Choose the other mode and try again.</string>
     <string name="chapar_start_refused">Android did not let Chapar start the VPN. Allow the VPN request, or turn off another app\'s always-on VPN, then try again.</string>
 
     <string name="chapar_welcome_title">Welcome to Chapar</string>
-    <string name="chapar_welcome_body">Sign in with your Gmail account to connect.</string>
+    <string name="chapar_welcome_body">Use Iranian websites, apps and services that don\'t work from outside Iran. Free, no ads, no hassle.\nSign in with your Gmail account to connect.</string>
     <string name="chapar_sign_in">Sign in with Google</string>
     <string name="chapar_privacy_note">We keep only a scrambled code made from your Google ID, your nickname, and how much data you use. Never your email, your IP address, or the sites you visit. Google sees that you signed in, and Chapar needs Google Play services. In Iran mode, Iranian sites (and their names) are reached through our server in Iran. In Tor mode we still see that you use Tor and how much data you use. You can delete your account in Settings.</string>
 
@@ -82,7 +82,28 @@
     <string name="chapar_always_on_title">Block leaks</string>
     <string name="chapar_always_on_note">In Android\'s VPN settings, tap the gear next to Chapar and turn on \"Always-on VPN\" and \"Block connections without VPN\". Then your real address is never used if the VPN drops.</string>
 
+    <!-- "Send a message" (D-056) and the language choice (D-057). -->
+    <string name="chapar_feedback_title">Send a message</string>
+    <string name="chapar_feedback_note">Report a problem, suggest an idea, or tell us anything.</string>
+    <string name="chapar_feedback_kind_problem">Problem</string>
+    <string name="chapar_feedback_kind_idea">Idea</string>
+    <string name="chapar_feedback_kind_other">Other</string>
+    <string name="chapar_feedback_label">Your message</string>
+    <string name="chapar_feedback_counter">%1$d / %2$d</string>
+    <string name="chapar_feedback_attach">Attach connection report</string>
+    <string name="chapar_feedback_attach_note">Connection events only, never the sites you visit.</string>
+    <string name="chapar_feedback_privacy">We see your nickname with your message. Don\'t include personal details. Messages are deleted after 30 days.</string>
+    <string name="chapar_feedback_send">Send</string>
+    <string name="chapar_feedback_sent">Thank you. Your message was sent.</string>
+    <string name="chapar_feedback_failed">Your message could not be sent. Try again.</string>
+    <string name="chapar_error_feedback_limit">You can send up to 5 messages a day. Try again tomorrow.</string>
+    <string name="chapar_language_title">Language</string>
+    <string name="chapar_language_system">Phone language</string>
+    <!-- Each language is named in its own language, as Android does. -->
+    <string name="chapar_language_en" translatable="false">English</string>
+    <string name="chapar_language_fa" translatable="false">فارسی</string>
+
     <string name="chapar_settings_about">About</string>
     <string name="chapar_about_version">Chapar %1$s</string>
-    <string name="chapar_about_license">Free software under the GPL-3.0 license, built on v2rayNG, without any warranty. You can ask us for the source code of this version.</string>
+    <string name="chapar_about_license">Free software under the GPL-3.0 license, built on v2rayNG, without any warranty. The source code is public: github.com/ali8765-sketch/IP_IR</string>
 </resources>

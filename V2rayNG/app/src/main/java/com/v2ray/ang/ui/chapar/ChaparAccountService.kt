@@ -24,6 +24,12 @@ class ChaparAccountService(
         data class SignedIn(val nickname: String, val info: AccountInfo?) : RefreshOutcome
     }
 
+    sealed interface FeedbackOutcome {
+        data object Sent : FeedbackOutcome
+        data object SignedOut : FeedbackOutcome
+        data class Failed(val error: AccountError) : FeedbackOutcome
+    }
+
     sealed interface ConnectOutcome {
         /** Profiles are stored and the VPN may start; [newKey] is false when the last key is retried offline. */
         data class Ready(val newKey: Boolean) : ConnectOutcome
@@ -88,6 +94,22 @@ class ChaparAccountService(
                 e.code == ChaparApiException.NETWORK && repository.profiles().isNotEmpty() -> ConnectOutcome.Ready(newKey = false)
                 else -> ConnectOutcome.Failed(ChaparAccount.errorFor(e.code))
             }
+        }
+    }
+
+    /** Sends a message to the admin (D-056). The server attaches only the account's nickname. */
+    fun sendFeedback(kind: FeedbackKind, message: String, report: String?): FeedbackOutcome {
+        val token = try {
+            session.token()
+        } catch (e: SessionUnavailable) {
+            return FeedbackOutcome.Failed(AccountError.FAILED)
+        } ?: return FeedbackOutcome.SignedOut.also { clearLocal() }
+        return try {
+            api.sendFeedback(token, kind.code, message, report)
+            FeedbackOutcome.Sent
+        } catch (e: ChaparApiException) {
+            if (ChaparAccount.isSignedOut(e)) FeedbackOutcome.SignedOut.also { clearLocal() }
+            else FeedbackOutcome.Failed(ChaparAccount.errorFor(e.code))
         }
     }
 

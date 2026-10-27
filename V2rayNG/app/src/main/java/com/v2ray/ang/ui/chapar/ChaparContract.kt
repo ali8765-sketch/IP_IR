@@ -45,6 +45,8 @@ data class ChaparUiState(
     val report: String? = null,
     /** The "Apps that skip the VPN" dialog while open; null when closed. */
     val bypass: BypassState? = null,
+    /** The "Send a message" dialog while open; null when closed. */
+    val feedback: FeedbackState? = null,
 ) {
     /** Before the first Connect every mode is offered; afterwards, the modes the server sent. */
     val availableModes: Set<ChaparMode>
@@ -95,6 +97,59 @@ sealed interface ChaparAction {
 
     /** Opens Android's VPN settings, where Always-on VPN and "Block connections without VPN" are turned on. */
     data object OpenVpnSettings : ChaparAction
+
+    /** "Send a message" to the admin (D-056). */
+    data object OpenFeedback : ChaparAction
+    data class SetFeedbackKind(val kind: FeedbackKind) : ChaparAction
+    data class SetFeedbackText(val text: String) : ChaparAction
+    data class SetFeedbackReport(val attach: Boolean) : ChaparAction
+    data object SendFeedback : ChaparAction
+    data object CloseFeedback : ChaparAction
+
+    /** The app's language (D-057): [ChaparLanguage.code]. Handled by the activity, which Android then recreates. */
+    data class SetLanguage(val language: ChaparLanguage) : ChaparAction
+}
+
+/** What a message is about; [code] is what the backend stores. */
+enum class FeedbackKind(val code: String) {
+    PROBLEM("problem"),
+    IDEA("idea"),
+    OTHER("other"),
+}
+
+/** The "Send a message" dialog. */
+data class FeedbackState(
+    val kind: FeedbackKind = FeedbackKind.PROBLEM,
+    val text: String = "",
+    val attachReport: Boolean = false,
+    val sending: Boolean = false,
+) {
+    val canSend: Boolean get() = !sending && text.isNotBlank()
+
+    companion object {
+        /** The backend's limits (backend/chapar/api.py, FeedbackIn). */
+        const val MAX_TEXT = 1000
+        const val MAX_REPORT = 3000
+
+        /** A report longer than [max] keeps its newest whole lines: the latest events matter most. */
+        fun trimReport(report: String, max: Int = MAX_REPORT): String {
+            if (report.length <= max) return report
+            val tail = report.takeLast(max)
+            return tail.substringAfter('\n', tail)
+        }
+    }
+}
+
+/** The languages Chapar offers (D-057); [code] is upstream's Language code (AppLocaleManager). */
+enum class ChaparLanguage(val code: String) {
+    SYSTEM("auto"),
+    ENGLISH("en"),
+    PERSIAN("fa"),
+    ;
+
+    companion object {
+        fun fromCode(code: String?): ChaparLanguage = entries.firstOrNull { it.code == code } ?: SYSTEM
+    }
 }
 
 /** An installed app that can be chosen to skip the VPN. */

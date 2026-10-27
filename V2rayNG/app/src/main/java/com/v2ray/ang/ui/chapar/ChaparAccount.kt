@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.chapar
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DecimalStyle
 import java.util.Locale
 
 sealed interface AccountState {
@@ -36,6 +37,9 @@ enum class AccountError {
 
     /** Connect answered with links the app refuses (ChaparLinks): wrong host, name, or settings. */
     LINK_REFUSED,
+
+    /** The account already sent the most messages allowed in a day (D-056). */
+    FEEDBACK_LIMIT,
     FAILED,
 }
 
@@ -57,17 +61,23 @@ object ChaparAccount {
         "nickname_taken" -> AccountError.NICKNAME_TAKEN
         "invalid_nickname" -> AccountError.INVALID_NICKNAME
         "disabled" -> AccountError.DISABLED
+        "feedback_limit" -> AccountError.FEEDBACK_LIMIT
         else -> AccountError.FAILED
     }
 
     /** The session is gone on the server (expired, signed out elsewhere, account deleted). */
     fun isSignedOut(e: ChaparApiException): Boolean = e.httpStatus == 401
 
-    fun gigabytesLeft(info: AccountInfo): String =
-        String.format(Locale.US, "%.1f", (info.quotaBytes - info.usedBytes).coerceAtLeast(0) / GIB)
+    /** [locale] is the screen's language, so Persian shows Persian digits. */
+    fun gigabytesLeft(info: AccountInfo, locale: Locale = Locale.US): String =
+        String.format(locale, "%.1f", (info.quotaBytes - info.usedBytes).coerceAtLeast(0) / GIB)
 
     /** "1 Nov": the day usage resets, in UTC as the backend counts it; empty if the server sent something odd. */
-    fun resetDay(info: AccountInfo): String =
-        runCatching { OffsetDateTime.parse(info.resetsAt).format(DateTimeFormatter.ofPattern("d MMM", Locale.US)) }.getOrDefault("")
+    fun resetDay(info: AccountInfo, locale: Locale = Locale.US): String =
+        runCatching {
+            // Without the decimal style, java.time writes Latin digits in every locale.
+            val format = DateTimeFormatter.ofPattern("d MMM", locale).withDecimalStyle(DecimalStyle.of(locale))
+            OffsetDateTime.parse(info.resetsAt).format(format)
+        }.getOrDefault("")
 
 }
