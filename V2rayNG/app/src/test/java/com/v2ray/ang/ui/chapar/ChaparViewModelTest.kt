@@ -423,6 +423,33 @@ class ChaparViewModelTest {
     }
 
     @Test
+    fun theAppsPageShowsChosenAppsFirstAndSearchesBothGroups() {
+        val page = BypassState(
+            apps = listOf(InstalledApp("a.app", "Alpha"), InstalledApp("b.app", "Beta"), InstalledApp("c.app", "Gamma")),
+            selected = setOf("b.app"),
+            loading = false,
+        )
+        assertEquals(listOf("b.app"), page.visibleChosen.map { it.packageName })
+        assertEquals(listOf("a.app", "c.app"), page.visibleOthers.map { it.packageName })
+        val searched = page.copy(filter = "gam")
+        assertEquals(emptyList<InstalledApp>(), searched.visibleChosen)
+        assertEquals(listOf("c.app"), searched.visibleOthers.map { it.packageName })
+    }
+
+    @Test
+    fun clearAllEmptiesTheListOnceSaved() = runTest(dispatcher) {
+        bypass.chosen = setOf("com.bank")
+        vm.openBypass()
+        advanceUntilIdle()
+        vm.clearBypass()
+        assertEquals(emptySet<String>(), state.bypass!!.selected)
+        assertEquals(setOf("com.bank"), bypass.chosen) // nothing is stored before Save
+        vm.saveBypass()
+        runCurrent()
+        assertEquals(emptySet<String>(), bypass.chosen)
+    }
+
+    @Test
     fun languagesMapToUpstreamCodes() {
         assertEquals(ChaparLanguage.PERSIAN, ChaparLanguage.fromCode("fa"))
         assertEquals(ChaparLanguage.ENGLISH, ChaparLanguage.fromCode("en"))

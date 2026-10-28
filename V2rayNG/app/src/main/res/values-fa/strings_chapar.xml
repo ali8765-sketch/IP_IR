@@ -34,7 +34,7 @@
 
     <string name="chapar_error_network">به چاپار دسترسی نداریم. اینترنت خود را بررسی کنید و دوباره امتحان کنید.</string>
     <string name="chapar_error_gmail_only">فقط حساب‌های Gmail می‌توانند از چاپار استفاده کنند. یک حساب ‎@gmail.com انتخاب کنید.</string>
-    <string name="chapar_error_signup_closed">ثبت‌نام بسته است: همهٔ جاها پر شده.</string>
+    <string name="chapar_error_signup_closed">ظرفیت سرویس فعلاً تکمیل است. لطفاً بعداً دوباره امتحان کنید.</string>
     <string name="chapar_error_nickname_taken">این اسم مستعار گرفته شده. اسم دیگری امتحان کنید.</string>
     <string name="chapar_error_invalid_nickname">از ۳ تا ۲۰ حرف انگلیسی، عدد یا _ استفاده کنید.</string>
     <string name="chapar_connect_failed">چاپار نتوانست اتصال شما را آماده کند. کمی بعد دوباره امتحان کنید.</string>
@@ -78,6 +78,10 @@
     <string name="chapar_bypass_on">بیرون از VPN</string>
     <string name="chapar_bypass_off">از VPN استفاده می‌کند</string>
     <string name="chapar_bypass_save">ذخیره</string>
+    <string name="chapar_bypass_selected">بیرون از VPN · %1$d</string>
+    <string name="chapar_bypass_all">همهٔ برنامه‌ها</string>
+    <string name="chapar_bypass_clear">همه را بردار</string>
+    <string name="chapar_bypass_none">برنامه‌ای پیدا نشد</string>
     <string name="chapar_always_on_title">جلوگیری از نشت</string>
     <string name="chapar_always_on_note">در تنظیمات VPN اندروید، روی چرخ‌دندهٔ کنار چاپار بزنید و «Always-on VPN» و «Block connections without VPN» را روشن کنید. آن وقت اگر VPN قطع شود، آدرس واقعی شما هرگز استفاده نمی‌شود.</string>
 

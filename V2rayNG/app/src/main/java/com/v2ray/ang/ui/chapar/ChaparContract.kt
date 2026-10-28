@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.chapar
 
+import androidx.compose.ui.graphics.ImageBitmap
+
 /**
  * The connection modes Chapar offers (Chapar decision D-038). The server publishes one link per
  * mode; the mode is read from the link's name (see [ChaparModes]).
@@ -92,6 +94,7 @@ sealed interface ChaparAction {
     data object OpenBypass : ChaparAction
     data class SetBypassFilter(val text: String) : ChaparAction
     data class ToggleBypassApp(val packageName: String) : ChaparAction
+    data object ClearBypass : ChaparAction
     data object SaveBypass : ChaparAction
     data object CloseBypass : ChaparAction
 
@@ -152,8 +155,8 @@ enum class ChaparLanguage(val code: String) {
     }
 }
 
-/** An installed app that can be chosen to skip the VPN. */
-data class InstalledApp(val packageName: String, val label: String)
+/** An installed app that can be chosen to skip the VPN. [icon] is loaded off the main thread, or null. */
+data class InstalledApp(val packageName: String, val label: String, val icon: ImageBitmap? = null)
 
 /** The bypass dialog: every launchable app, the chosen ones, and the search text. */
 data class BypassState(
@@ -164,4 +167,12 @@ data class BypassState(
 ) {
     val visible: List<InstalledApp>
         get() = ChaparBypass.visible(apps, selected, filter)
+
+    /** The visible apps that skip the VPN, shown first in their own group. */
+    val visibleChosen: List<InstalledApp>
+        get() = visible.filter { it.packageName in selected }
+
+    /** The other visible apps. */
+    val visibleOthers: List<InstalledApp>
+        get() = visible.filter { it.packageName !in selected }
 }

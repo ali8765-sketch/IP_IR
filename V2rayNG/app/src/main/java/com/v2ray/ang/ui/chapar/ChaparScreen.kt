@@ -88,6 +88,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.disabled
@@ -153,7 +160,7 @@ fun ChaparScreen(
     }
 
     state.report?.let { report -> ReportDialog(report, onAction) }
-    state.bypass?.let { bypass -> BypassDialog(bypass, onAction) }
+    state.bypass?.let { bypass -> BypassScreen(bypass, onAction) }
     state.feedback?.let { feedback -> FeedbackDialog(feedback, onAction) }
 
     if (chooseLanguage) {
@@ -207,64 +214,198 @@ private fun ReportDialog(report: String, onAction: (ChaparAction) -> Unit) {
     )
 }
 
-/** "Apps that skip the VPN": the chosen apps use the phone's own connection and real address (D-047). */
+/**
+ * "Apps that skip the VPN" (D-047): the chosen apps use the phone's own connection and real address. A full
+ * screen in the style of app pickers in well-known apps: a short warning, search, the chosen apps first with a
+ * count and "Clear all", every app with its icon and a switch, and one large Save button within thumb reach.
+ */
 @Composable
-private fun BypassDialog(state: BypassState, onAction: (ChaparAction) -> Unit) {
-    AlertDialog(
+private fun BypassScreen(state: BypassState, onAction: (ChaparAction) -> Unit) {
+    Dialog(
         onDismissRequest = { onAction(ChaparAction.CloseBypass) },
-        title = { Text(stringResource(R.string.chapar_bypass_title)) },
-        text = {
-            Column(Modifier.heightIn(max = 480.dp).imePadding()) {
-                Text(stringResource(R.string.chapar_bypass_warning), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = state.filter,
-                    onValueChange = { onAction(ChaparAction.SetBypassFilter(it)) },
-                    label = { Text(stringResource(R.string.chapar_bypass_search)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        val colors = MaterialTheme.colorScheme
+        val extras = LocalChaparColors.current
+        Surface(color = colors.background, contentColor = colors.onBackground, modifier = Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 64.dp)
+                        .padding(horizontal = 4.dp),
+                ) {
+                    IconButton(onClick = { onAction(ChaparAction.CloseBypass) }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close_24dp),
+                            contentDescription = stringResource(R.string.chapar_report_close),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.chapar_bypass_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { heading() },
+                    )
+                }
                 if (state.loading) {
-                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 } else {
-                    LazyColumn(Modifier.fillMaxWidth()) {
-                        items(state.visible, key = { it.packageName }) { app ->
-                            val chosen = app.packageName in state.selected
-                            val chosenText = stringResource(if (chosen) R.string.chapar_bypass_on else R.string.chapar_bypass_off)
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 48.dp)
-                                    .toggleable(value = chosen, role = Role.Checkbox) {
-                                        onAction(ChaparAction.ToggleBypassApp(app.packageName))
-                                    }
-                                    .clearAndSetSemantics {
-                                        contentDescription = app.label
-                                        stateDescription = chosenText
-                                        role = Role.Checkbox
-                                        onClick { onAction(ChaparAction.ToggleBypassApp(app.packageName)); true }
-                                    },
+                    val chosen = state.visibleChosen
+                    val others = state.visibleOthers
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        item(key = "warning") {
+                            Surface(
+                                color = extras.sun.copy(alpha = 0.16f),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Checkbox(checked = chosen, onCheckedChange = null)
-                                Spacer(Modifier.size(8.dp))
-                                Text(app.label, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = stringResource(R.string.chapar_bypass_warning),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                )
                             }
                         }
+                        item(key = "search") {
+                            OutlinedTextField(
+                                value = state.filter,
+                                onValueChange = { onAction(ChaparAction.SetBypassFilter(it)) },
+                                placeholder = { Text(stringResource(R.string.chapar_bypass_search)) },
+                                leadingIcon = { Icon(painterResource(R.drawable.ic_search_24dp), contentDescription = null) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp),
+                            )
+                        }
+                        if (chosen.isNotEmpty()) {
+                            item(key = "chosen-header") {
+                                BypassSectionHeader(
+                                    text = stringResource(R.string.chapar_bypass_selected, state.selected.size),
+                                    action = stringResource(R.string.chapar_bypass_clear),
+                                    onActionClick = { onAction(ChaparAction.ClearBypass) },
+                                )
+                            }
+                            items(chosen, key = { it.packageName }) { app -> BypassRow(app, chosen = true, onAction = onAction) }
+                        }
+                        item(key = "others-header") { BypassSectionHeader(text = stringResource(R.string.chapar_bypass_all)) }
+                        if (others.isEmpty()) {
+                            item(key = "none") {
+                                Text(
+                                    text = stringResource(R.string.chapar_bypass_none),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                )
+                            }
+                        }
+                        items(others, key = { it.packageName }) { app -> BypassRow(app, chosen = false, onAction = onAction) }
                     }
                 }
+                Button(
+                    onClick = { onAction(ChaparAction.SaveBypass) },
+                    enabled = !state.loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .heightIn(min = 56.dp),
+                ) { Text(stringResource(R.string.chapar_bypass_save), style = MaterialTheme.typography.titleMedium) }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onAction(ChaparAction.SaveBypass) }, enabled = !state.loading) {
-                Text(stringResource(R.string.chapar_bypass_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = { onAction(ChaparAction.CloseBypass) }) { Text(stringResource(R.string.chapar_cancel)) }
-        },
-    )
+        }
+    }
+}
+
+@Composable
+private fun BypassSectionHeader(text: String, action: String? = null, onActionClick: () -> Unit = {}) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .padding(top = 10.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .weight(1f)
+                .semantics { heading() },
+        )
+        if (action != null) TextButton(onClick = onActionClick) { Text(action) }
+    }
+}
+
+/** One app: its icon, its name, and a switch that is on while the app skips the VPN. One focusable node. */
+@Composable
+private fun BypassRow(app: InstalledApp, chosen: Boolean, onAction: (ChaparAction) -> Unit) {
+    val stateText = stringResource(if (chosen) R.string.chapar_bypass_on else R.string.chapar_bypass_off)
+    val toggle = { onAction(ChaparAction.ToggleBypassApp(app.packageName)) }
+    Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .heightIn(min = 60.dp)
+                .toggleable(value = chosen, role = Role.Switch) { toggle() }
+                .clearAndSetSemantics {
+                    contentDescription = app.label
+                    stateDescription = stateText
+                    role = Role.Switch
+                    onClick { toggle(); true }
+                }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+        ) {
+            AppIcon(app)
+            Spacer(Modifier.size(12.dp))
+            Text(
+                text = app.label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.size(8.dp))
+            Switch(checked = chosen, onCheckedChange = null)
+        }
+    }
+}
+
+@Composable
+private fun AppIcon(app: InstalledApp) {
+    val shape = RoundedCornerShape(10.dp)
+    val icon = app.icon
+    if (icon != null) {
+        Image(bitmap = icon, contentDescription = null, modifier = Modifier.size(ChaparViewModel.ICON_DP.dp).clip(shape))
+    } else {
+        // No icon could be read: the first letter of the name, as launchers do.
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(ChaparViewModel.ICON_DP.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.secondaryContainer),
+        ) {
+            Text(
+                text = app.label.take(1).uppercase(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+    }
 }
 
 /** "Send a message" to the admin (D-056): a problem, an idea, or anything else. */
@@ -762,7 +903,7 @@ private fun SettingsSheet(
     onAction: (ChaparAction) -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
-        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
             val itemColors = ListItemDefaults.colors(containerColor = Color.Transparent)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.chapar_signed_in_as, nickname)) },
@@ -787,7 +928,28 @@ private fun SettingsSheet(
                 modifier = Modifier.clickable(role = Role.Button, onClick = onChooseLanguage),
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            // Signing out or deleting waits while a connection is being set up or taken down.
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.chapar_feedback_title)) },
+                supportingContent = { Text(stringResource(R.string.chapar_feedback_note)) },
+                colors = itemColors,
+                modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenFeedback) },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.chapar_report_problem)) },
+                supportingContent = { Text(stringResource(R.string.chapar_report_problem_note)) },
+                colors = itemColors,
+                modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenReport) },
+            )
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            ListItem(
+                overlineContent = { Text(stringResource(R.string.chapar_settings_about)) },
+                headlineContent = { Text(stringResource(R.string.chapar_about_version, versionName)) },
+                supportingContent = { Text(stringResource(R.string.chapar_about_license)) },
+                colors = itemColors,
+            )
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            // Account actions come last, so they are not tapped by mistake. They wait while a connection is being set up
+            // or taken down.
             ListItem(
                 headlineContent = { Text(stringResource(R.string.chapar_sign_out)) },
                 colors = itemColors,
@@ -802,26 +964,6 @@ private fun SettingsSheet(
                 },
                 colors = itemColors,
                 modifier = Modifier.clickable(enabled = accountActionsEnabled, role = Role.Button) { onAction(ChaparAction.DeleteAccount) },
-            )
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.chapar_report_problem)) },
-                supportingContent = { Text(stringResource(R.string.chapar_report_problem_note)) },
-                colors = itemColors,
-                modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenReport) },
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.chapar_feedback_title)) },
-                supportingContent = { Text(stringResource(R.string.chapar_feedback_note)) },
-                colors = itemColors,
-                modifier = Modifier.clickable(role = Role.Button) { onAction(ChaparAction.OpenFeedback) },
-            )
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            ListItem(
-                overlineContent = { Text(stringResource(R.string.chapar_settings_about)) },
-                headlineContent = { Text(stringResource(R.string.chapar_about_version, versionName)) },
-                supportingContent = { Text(stringResource(R.string.chapar_about_license)) },
-                colors = itemColors,
             )
         }
     }

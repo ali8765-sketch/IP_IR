@@ -6,6 +6,8 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import com.v2ray.ang.AngApplication
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
@@ -551,6 +553,11 @@ class ChaparViewModel(
         }
     }
 
+    /** "Clear all": every app uses the VPN again once saved. */
+    fun clearBypass() {
+        _uiState.update { state -> state.bypass?.let { state.copy(bypass = it.copy(selected = emptySet())) } ?: state }
+    }
+
     fun saveBypass() {
         val current = _uiState.value.bypass ?: return
         viewModelScope.launch {
@@ -612,16 +619,24 @@ class ChaparViewModel(
     companion object {
         internal const val WATCHDOG_MS = 45_000L
 
-        /** Apps with a launcher icon (visible through the manifest's <queries>), Chapar itself excluded. */
+        /** Apps with a launcher icon (visible through the manifest's <queries>), Chapar itself excluded, each with
+         *  its icon at the list's size. Package-manager and bitmap work: call it on Dispatchers.IO. */
         fun launchableApps(application: Application): List<InstalledApp> {
             val pm = application.packageManager
+            val iconPx = (ICON_DP * application.resources.displayMetrics.density).toInt().coerceAtLeast(1)
             val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             return pm.queryIntentActivities(intent, 0)
                 .map { it.activityInfo.applicationInfo }
                 .distinctBy { it.packageName }
                 .filter { it.packageName != application.packageName }
-                .map { InstalledApp(it.packageName, pm.getApplicationLabel(it).toString()) }
+                .map { info ->
+                    val icon = runCatching { pm.getApplicationIcon(info).toBitmap(iconPx, iconPx).asImageBitmap() }.getOrNull()
+                    InstalledApp(info.packageName, pm.getApplicationLabel(info).toString(), icon)
+                }
         }
+
+        /** The app icon size in the "Apps that skip the VPN" list. */
+        const val ICON_DP = 40
 
         fun connectErrorText(error: AccountError): Int = when (error) {
             AccountError.NETWORK -> R.string.chapar_error_network

@@ -126,6 +126,7 @@ class ChaparActivity : BaseComponentActivity() {
             ChaparAction.OpenBypass -> viewModel.openBypass()
             is ChaparAction.SetBypassFilter -> viewModel.setBypassFilter(action.text)
             is ChaparAction.ToggleBypassApp -> viewModel.toggleBypassApp(action.packageName)
+            ChaparAction.ClearBypass -> viewModel.clearBypass()
             ChaparAction.SaveBypass -> viewModel.saveBypass()
             ChaparAction.CloseBypass -> viewModel.closeBypass()
             ChaparAction.OpenVpnSettings -> openVpnSettings()

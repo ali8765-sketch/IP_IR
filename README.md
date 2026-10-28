@@ -23,8 +23,8 @@
 
 چاپار در **مرحلهٔ اول راه‌اندازی** است:
 
-- فعلاً ظرفیت **۵۰ نفر** را دارد. وقتی پر شود، ثبت‌نام بسته می‌شود. در مرحله‌های بعد ظرفیت بیشتر می‌شود.
-- برای **دانلود سنگین و مداوم** (فیلم، تورنت، فایل‌های بزرگ) ساخته نشده است. کاربرد اصلی‌اش استفاده از سایت‌ها و خدمات ایرانی است. اگر کسی در چند دقیقه حجم زیادی دانلود کند، سرعتش برای یک ساعت کم می‌شود تا سرویس برای همه سریع بماند.
+- ظرفیت فعلاً محدود است. وقتی تکمیل شود، ثبت‌نام موقتاً بسته می‌شود. در مرحله‌های بعد ظرفیت بیشتر می‌شود.
+- برای **دانلود سنگین و مداوم** (فیلم، تورنت، فایل‌های بزرگ) ساخته نشده است. کاربرد اصلی‌اش استفاده از سایت‌ها و خدمات ایرانی است. اگر کسی در نیم ساعت حجم زیادی دانلود کند، سرعتش برای یک ساعت نصف می‌شود تا سرویس برای همه سریع بماند.
 
 **دانلود:** [آخرین نسخه](https://github.com/ali8765-sketch/IP_IR/releases/latest)
 
@@ -40,10 +40,10 @@ use inside Iran, and a few Iranian sites or payment gateways may still refuse ou
 
 ### Early test phase
 
-Chapar is in its **first launch phase**: it has room for **50 people** for now (sign-up closes when it is full)
+Chapar is in its **first launch phase**: places are limited for now (sign-up closes for a while when the service is full)
 and will grow in later phases. It is **not meant for heavy, continuous downloads** (films, torrents, large
-files); its purpose is Iranian sites and services. Someone who downloads a lot within a few minutes is slowed
-down for an hour, so the service stays fast for everyone.
+files); its purpose is Iranian sites and services. Someone who downloads a lot within half an hour gets half
+the speed for an hour, so the service stays fast for everyone.
 
 This repository is the complete source code of the Android app, published so that anyone can check what the
 app does, build it themselves, and compare it with the APK we publish.

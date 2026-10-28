@@ -35,7 +35,7 @@
 
     <string name="chapar_error_network">Can\'t reach Chapar. Check your internet and try again.</string>
     <string name="chapar_error_gmail_only">Only Gmail accounts can use Chapar. Choose an @gmail.com account.</string>
-    <string name="chapar_error_signup_closed">Sign-up is closed: all places are taken.</string>
+    <string name="chapar_error_signup_closed">We\'ve reached the maximum number of users for now. Please try again later.</string>
     <string name="chapar_error_nickname_taken">This nickname is taken. Try another one.</string>
     <string name="chapar_error_invalid_nickname">Use 3 to 20 letters, digits, or _.</string>
     <string name="chapar_connect_failed">Chapar couldn\'t get your connection ready. Try again in a moment.</string>
@@ -79,6 +79,10 @@
     <string name="chapar_bypass_on">Skips the VPN</string>
     <string name="chapar_bypass_off">Uses the VPN</string>
     <string name="chapar_bypass_save">Save</string>
+    <string name="chapar_bypass_selected">Skipping the VPN · %1$d</string>
+    <string name="chapar_bypass_all">All apps</string>
+    <string name="chapar_bypass_clear">Clear all</string>
+    <string name="chapar_bypass_none">No apps found</string>
     <string name="chapar_always_on_title">Block leaks</string>
     <string name="chapar_always_on_note">In Android\'s VPN settings, tap the gear next to Chapar and turn on \"Always-on VPN\" and \"Block connections without VPN\". Then your real address is never used if the VPN drops.</string>
 
