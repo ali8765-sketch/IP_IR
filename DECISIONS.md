@@ -11,7 +11,7 @@ not public; this file lists, in one or two lines each, every decision the app's 
 | D-041 | Sign-in only with a verified `@gmail.com` Google account. The server checks this from the verified token, uses the email address only for that check, and never stores it. |
 | D-042 | Android app only. The user signs in and taps Connect; the app gets its connection settings from our API. No QR codes, share links, subscriptions, other clients, or importing from other apps. |
 | D-043 | Every Connect gets a new connection key; the server cancels the previous one at the same moment. One device per account at a time. When the API cannot be reached at all, the app retries with its last key. |
-| D-046 | In Iran mode, Iranian destinations leave through a server in Iran, so they see an Iranian address. The app has no part in this; it is server routing. |
+| D-046 | In Iran mode, traffic leaves through a server in Iran, so sites see an Iranian address (every site since D-061 of the main project; before that only Iranian destinations). The app has no part in this; it is server routing. |
 | D-047 | Fixes after a review: links from Connect are checked before import, the local SOCKS port is random and password-protected, the routing preset sends everything through the VPN, no backup and no cleartext, Connect cannot get stuck, the "Block leaks" hint, and "Apps that skip the VPN". |
 | D-056 | Settings → "Send a message": a problem, an idea, or anything else, sent to the admin with the account's nickname and, only if the user chooses, the connection report. The server keeps messages 30 days and deletes them with the account; at most 5 a day. |
 | D-057 | The app is in English and Persian; it follows the phone's language, and Settings → Language can choose either. |

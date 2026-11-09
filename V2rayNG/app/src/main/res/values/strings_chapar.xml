@@ -22,7 +22,7 @@
     <string name="chapar_mode_iran">Iran</string>
     <string name="chapar_mode_tor">Tor</string>
     <!-- Iran mode since D-046: Iranian sites leave from our server in Iran. -->
-    <string name="chapar_mode_iran_note">Fast and private. Iranian sites see an Iranian address: they are reached through our server in Iran. A few Iranian sites and payment gateways may still refuse our server.</string>
+    <string name="chapar_mode_iran_note">All your web traffic leaves from our server in Iran, so every site sees an Iranian address. Sites that are blocked in Iran, such as YouTube, Instagram, and Telegram, won\'t open: use Tor mode, or add the app to \"Apps that skip the VPN\" in Settings. Iran\'s network can see which sites you visit, not what you do on them. A few Iranian sites and payment gateways may still refuse our server.</string>
     <string name="chapar_mode_tor_note">Slower, but websites can\'t see your IP. Some sites block Tor. Other apps on your phone can still find devices on your home network.</string>
     <string name="chapar_mode_unavailable">Not available right now</string>
     <string name="chapar_mode_missing">This mode is not available right now. Choose the other mode and try again.</string>
@@ -31,7 +31,7 @@
     <string name="chapar_welcome_title">Welcome to Chapar</string>
     <string name="chapar_welcome_body">Use Iranian websites, apps and services that don\'t work from outside Iran. Free, no ads, no hassle.\nSign in with your Gmail account to connect.</string>
     <string name="chapar_sign_in">Sign in with Google</string>
-    <string name="chapar_privacy_note">We keep only a scrambled code made from your Google ID, your nickname, and how much data you use. Never your email, your IP address, or the sites you visit. Google sees that you signed in, and Chapar needs Google Play services. In Iran mode, Iranian sites (and their names) are reached through our server in Iran. In Tor mode we still see that you use Tor and how much data you use. You can delete your account in Settings.</string>
+    <string name="chapar_privacy_note">We keep only a scrambled code made from your Google ID, your nickname, and how much data you use. Never your email, your IP address, or the sites you visit. Google sees that you signed in, and Chapar needs Google Play services. In Iran mode, all your web traffic leaves through our server in Iran, so Iran\'s network can see which sites you visit (not what you do on them). In Tor mode we still see that you use Tor and how much data you use. You can delete your account in Settings.</string>
 
     <string name="chapar_error_network">Can\'t reach Chapar. Check your internet and try again.</string>
     <string name="chapar_error_gmail_only">Only Gmail accounts can use Chapar. Choose an @gmail.com account.</string>

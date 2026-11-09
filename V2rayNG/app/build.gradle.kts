@@ -23,8 +23,8 @@ android {
         applicationId = "org.chapar.vpn"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 5
+        versionName = "0.1.4"
         // Utils.isXray() read this from the upstream package name, which this fork changes.
         buildConfigField("boolean", "IS_XRAY", "true")
         buildConfigField("String", "CHAPAR_API_URL", "\"${chaparProps.getProperty("CHAPAR_API_URL", "")}\"")

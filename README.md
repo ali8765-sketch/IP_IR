@@ -59,9 +59,12 @@ An outside code audit and what we changed after it: [AUDIT-FIXES.md](AUDIT-FIXES
 - You sign in with a Google account (a verified `@gmail.com` address) and choose a nickname.
 - Each account gets a monthly allowance at a fixed speed. The app shows how much you have used.
 - Two modes:
-  - **Iran mode** (default): your traffic goes through our server. Iranian websites are reached through a
-    server in Iran, so they see an Iranian address (banking and government sites work).
-  - **Tor mode**: your traffic leaves through the Tor network, so websites do not see our server's address.
+  - **Iran mode** (default): all your web traffic leaves through our server in Iran, so every website sees an
+    Iranian address (banking and government sites work). Sites that are blocked in Iran, such as YouTube,
+    Instagram, and Telegram, do not open in this mode, and Iran's network can see which sites you visit (not
+    what you do on them).
+  - **Tor mode**: your traffic leaves only through the Tor network, so websites see neither your address nor
+    our server's.
 - You can pick apps that should skip the VPN.
 
 ## What the app sends, and to whom

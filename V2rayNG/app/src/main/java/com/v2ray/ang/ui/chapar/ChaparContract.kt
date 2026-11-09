@@ -5,9 +5,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 /**
  * The connection modes Chapar offers (Chapar decision D-038). The server publishes one link per
  * mode; the mode is read from the link's name (see [ChaparModes]).
- * IRAN: the default. Iranian sites go through the Iran server (live since D-046), everything else
- * leaves from the main server.
- * TOR: everything goes through Tor.
+ * IRAN: the default. Every web connection leaves through the Iran server (D-061; before that only
+ * Iranian destinations did), never from the main server.
+ * TOR: everything goes through Tor, never from the main server.
  */
 enum class ChaparMode(
     /** The English name used in the "Report a problem" text, which is never translated. */
