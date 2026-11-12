@@ -24,7 +24,7 @@
 چاپار در **مرحلهٔ اول راه‌اندازی** است:
 
 - ظرفیت فعلاً محدود است. وقتی تکمیل شود، ثبت‌نام موقتاً بسته می‌شود. در مرحله‌های بعد ظرفیت بیشتر می‌شود.
-- برای **دانلود سنگین و مداوم** (فیلم، تورنت، فایل‌های بزرگ) ساخته نشده است. کاربرد اصلی‌اش استفاده از سایت‌ها و خدمات ایرانی است. اگر کسی در نیم ساعت حجم زیادی دانلود کند، سرعتش برای یک ساعت نصف می‌شود تا سرویس برای همه سریع بماند.
+- برای **دانلود سنگین و مداوم** (فیلم، تورنت، فایل‌های بزرگ) ساخته نشده است. کاربرد اصلی‌اش استفاده از سایت‌ها و خدمات ایرانی است. ما سرعت را محدود نمی‌کنیم، اما سهم ماهانه محدود است و در حالت ایران سرعت واقعی به اینترنت بین‌المللی ایران بستگی دارد.
 
 **دانلود:** [آخرین نسخه](https://github.com/ali8765-sketch/IP_IR/releases/latest)
 
@@ -42,8 +42,8 @@ use inside Iran, and a few Iranian sites or payment gateways may still refuse ou
 
 Chapar is in its **first launch phase**: places are limited for now (sign-up closes for a while when the service is full)
 and will grow in later phases. It is **not meant for heavy, continuous downloads** (films, torrents, large
-files); its purpose is Iranian sites and services. Someone who downloads a lot within half an hour gets half
-the speed for an hour, so the service stays fast for everyone.
+files); its purpose is Iranian sites and services. There is no speed limit from us, but the
+monthly allowance is limited, and in Iran mode the real speed depends on the international internet in Iran.
 
 This repository is the complete source code of the Android app, published so that anyone can check what the
 app does, build it themselves, and compare it with the APK we publish.
@@ -57,7 +57,7 @@ An outside code audit and what we changed after it: [AUDIT-FIXES.md](AUDIT-FIXES
 ## What the app does
 
 - You sign in with a Google account (a verified `@gmail.com` address) and choose a nickname.
-- Each account gets a monthly allowance at a fixed speed. The app shows how much you have used.
+- Each account gets a monthly allowance. The app shows how much you have used.
 - Two modes:
   - **Iran mode** (default): all your web traffic leaves through our server in Iran, so every website sees an
     Iranian address (banking and government sites work). Sites that are blocked in Iran, such as YouTube,
